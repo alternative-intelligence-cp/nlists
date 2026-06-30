@@ -1,0 +1,8 @@
+pub func:failsafe = int32(tbb32:err) { exit 1i32; };
+pub func:main = int32(int32:argc, wild int8->:argv) {
+    wild int8->:ptr = nodrop alloc(32i64);
+    int64:addr = (@cast_unchecked<int64>(ptr)) + 8i64;
+    <-@cast_unchecked<int64->>(addr) = 123456789123456789i64;
+    dalloc(ptr);
+    return 0i32;
+};

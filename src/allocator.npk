@@ -1,0 +1,114 @@
+use "mem.npk".*;
+// src/allocator.npk
+
+// Pure Native Node Allocator using raw POSIX mmap
+// NO C-DEPENDENCIES OR SHIMS
+
+pub Type:NodeAllocator = {
+    // create(node_size) -> returns int64 handle
+    func:create = int64(int64:node_size) {
+        wild int8->:blk = nodrop alloc(64i64);
+        if (blk == NULL) {
+            pass 0i64;
+        }
+
+        int64:handle = ((@cast_unchecked<int64>(blk)) & 281474976710655i64) & 281474976710655i64;
+        
+        if (node_size < 8i64) {
+            node_size = 8i64;
+        }
+
+        drop raw store64(handle + 0i64, node_size);
+        drop raw store64(handle + 8i64, 0i64); // head block
+        drop raw store64(handle + 16i64, 0i64); // current_offset
+        drop raw store64(handle + 24i64, 32768i64); // block_size (32KB default)
+        drop raw store64(handle + 32i64, 0i64); // free_list head
+
+        pass handle;
+    };
+
+    func:alloc = int64(int64:handle) {
+        int64:free_head = raw load64(handle + 32i64);
+        int64:node_size = raw load64(handle + 0i64);
+
+        if (free_head != 0i64) {
+            // Pop from free list
+            int64:next_free = raw load64(free_head);
+            drop raw store64(handle + 32i64, next_free);
+            
+            // Zero memory
+            int64:i = 0i64;
+            while (i < node_size) {
+                drop raw store8(free_head + i, 0i8);
+                i = i + 1i64;
+            }
+            pass free_head;
+        }
+
+        // Need new allocation from block
+        int64:block_size = raw load64(handle + 24i64);
+        int64:head_block = raw load64(handle + 8i64);
+        int64:offset = raw load64(handle + 16i64);
+
+        if (head_block == 0i64) {
+            wild int8->:blk = nodrop alloc(block_size);
+            if (blk == NULL) { pass 0i64; }
+            int64:new_block = ((@cast_unchecked<int64>(blk)) & 281474976710655i64) & 281474976710655i64;
+            drop raw store64(new_block, 0i64);
+            drop raw store64(handle + 8i64, new_block);
+            head_block = new_block;
+            offset = 8i64;
+            drop raw store64(handle + 16i64, offset);
+        } else if ((offset + node_size) > block_size) {
+            wild int8->:blk = nodrop alloc(block_size);
+            if (blk == NULL) { pass 0i64; }
+            int64:new_block = ((@cast_unchecked<int64>(blk)) & 281474976710655i64) & 281474976710655i64;
+            drop raw store64(new_block, head_block);
+            drop raw store64(handle + 8i64, new_block);
+            head_block = new_block;
+            offset = 8i64;
+            drop raw store64(handle + 16i64, offset);
+        }
+
+        // Allocate from current block
+        int64:ptr = head_block + offset;
+        drop raw store64(handle + 16i64, offset + node_size);
+
+        // Zero memory
+        int64:j = 0i64;
+        while (j < node_size) {
+            // removed zero
+            j = j + 1i64;
+        }
+
+        pass ptr;
+    };
+
+    func:free = int8(int64:handle, int64:ptr) {
+        if (ptr == 0i64) {
+            pass 0i8;
+        }
+        int64:free_head = raw load64(handle + 32i64);
+        drop raw store64(ptr, free_head);
+        drop raw store64(handle + 32i64, ptr);
+        pass 0i8;
+    };
+
+    func:destroy = int8(int64:handle) {
+        if (handle == 0i64) {
+            pass 0i8;
+        }
+        int64:head_block = raw load64(handle + 8i64);
+        int64:block_size = raw load64(handle + 24i64);
+
+        while (head_block != 0i64) {
+            int64:next_block = raw load64(head_block);
+            dalloc(@cast_unchecked<any->>(head_block));
+            head_block = next_block;
+        }
+
+        // free the handle itself
+        dalloc(@cast_unchecked<any->>(handle));
+        pass 0i8;
+    };
+};

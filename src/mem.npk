@@ -1,0 +1,33 @@
+// src/mem.npk
+pub func:store64 = int8(int64:addr, int64:val) {
+    int64->:ptr = @cast_unchecked<int64->>(addr);
+    ptr[0i64] = val;
+    pass 0i8;
+};
+
+pub func:load64 = int64(int64:addr) {
+    int64->:ptr = @cast_unchecked<int64->>(addr);
+    pass ptr[0i64];
+};
+
+pub func:store32 = int8(int64:addr, int32:val) {
+    int32->:ptr = @cast_unchecked<int32->>(addr);
+    ptr[0i64] = val;
+    pass 0i8;
+};
+
+pub func:load32 = int32(int64:addr) {
+    int32->:ptr = @cast_unchecked<int32->>(addr);
+    pass ptr[0i64];
+};
+
+pub func:store8 = int8(int64:addr, int8:val) {
+    int8->:ptr = @cast_unchecked<int8->>(addr);
+    ptr[0i64] = val;
+    pass 0i8;
+};
+
+pub func:load8 = int8(int64:addr) {
+    int8->:ptr = @cast_unchecked<int8->>(addr);
+    pass ptr[0i64];
+};

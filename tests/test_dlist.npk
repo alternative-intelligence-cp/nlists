@@ -1,0 +1,52 @@
+use "../src/doubly.npk".*;
+
+pub func:failsafe = int32(tbb32:err) {
+    exit 1i32;
+};
+
+pub func:main = int32(int32:argc, wild int8->:argv) {
+    int64:list = raw DList.create();
+    if (list == 0i64) { return 1i32; }
+
+    // Test push_front
+    drop raw DList.push_front(list, 10i64);
+    drop raw DList.push_front(list, 20i64);
+    if (raw DList.count(list) != 2i64) { return 2i32; }
+
+    // Test pop_front
+    if (raw DList.pop_front(list) != 20i64) { return 3i32; }
+    if (raw DList.pop_front(list) != 10i64) { return 4i32; }
+    if (raw DList.count(list) != 0i64) { return 5i32; }
+
+    // Test push_back and pop_back
+    drop raw DList.push_back(list, 100i64);
+    drop raw DList.push_back(list, 200i64);
+    drop raw DList.push_back(list, 300i64);
+    if (raw DList.count(list) != 3i64) { return 6i32; }
+
+    if (raw DList.pop_back(list) != 300i64) { return 7i32; }
+    if (raw DList.pop_front(list) != 100i64) { return 8i32; }
+    if (raw DList.count(list) != 1i64) { return 9i32; }
+
+    // Test contains and remove
+    drop raw DList.push_back(list, 400i64); // List is [200, 400]
+    if (raw DList.contains(list, 400i64) != 1i8) { return 10i32; }
+    
+    drop raw DList.remove(list, 200i64); // List is [400]
+    if (raw DList.count(list) != 1i64) { return 11i32; }
+    if (raw DList.pop_front(list) != 400i64) { return 12i32; }
+
+    // Test insert before / after
+    drop raw DList.push_back(list, 50i64); // List [50]
+    drop raw DList.insert_before(list, 50i64, 40i64); // List [40, 50]
+    drop raw DList.insert_after(list, 50i64, 60i64); // List [40, 50, 60]
+
+    if (raw DList.pop_front(list) != 40i64) { return 13i32; }
+    if (raw DList.pop_front(list) != 50i64) { return 14i32; }
+    if (raw DList.pop_front(list) != 60i64) { return 15i32; }
+
+    // Cleanup
+    drop raw DList.destroy(list);
+    
+    exit 0i32;
+};

@@ -1,0 +1,59 @@
+use "mem.npk".*;
+// src/types.npk
+
+// Tag constants for Universal Variants (SListV, DListV)
+pub int64:LIST_TAG_EMPTY   = 0i64;
+pub int64:LIST_TAG_INT64   = 1i64;
+pub int64:LIST_TAG_FLOAT64 = 2i64;
+pub int64:LIST_TAG_PTR     = 3i64;
+pub int64:LIST_TAG_BYTES   = 4i64;
+
+// Singly-Linked Node (int64 payload)
+// Size: 16 bytes
+pub struct:SNode = {
+    int64:val;      // 0..7
+    int64:next;     // 8..15
+};
+
+// Singly-Linked Universal Node (tagged payload)
+// Size: 24 bytes
+pub struct:SNodeV = {
+    int64:tag;      // 0..7
+    int64:val;      // 8..15
+    int64:next;     // 16..23
+};
+
+// Doubly-Linked Node (int64 payload)
+// Size: 24 bytes
+pub struct:DNode = {
+    int64:val;      // 0..7
+    int64:next;     // 8..15
+    int64:prev;     // 16..23
+};
+
+// Doubly-Linked Universal Node (tagged payload)
+// Size: 32 bytes (cache line friendly)
+pub struct:DNodeV = {
+    int64:tag;      // 0..7
+    int64:val;      // 8..15
+    int64:next;     // 16..23
+    int64:prev;     // 24..31
+};
+
+// SListHeader handles singly-linked states
+// Size: 32 bytes
+pub struct:SListHeader = {
+    int64:head;      // 0..7
+    int64:tail;      // 8..15
+    int64:count;     // 16..23
+    int64:allocator; // 24..31 (handle to NodeAllocator)
+};
+
+// DListHeader handles doubly-linked states
+// Size: 32 bytes
+pub struct:DListHeader = {
+    int64:head;      // 0..7
+    int64:tail;      // 8..15
+    int64:count;     // 16..23
+    int64:allocator; // 24..31
+};

@@ -1,0 +1,92 @@
+// tests/test_stress.npk
+use "../src/singly.npk".*;
+use "../src/doubly.npk".*;
+use "../src/sorted.npk".*;
+use "../src/skiplist.npk".*;
+use "../src/mem.npk".*;
+
+pub func:failsafe = int32(tbb32:err) { exit 1i32; };
+
+// Simple pseudorandom number generator for hashing tests
+pub func:hash_int64 = int64(int64:key) {
+    key = key ^ (key >> 30i64);
+    key = key * -4265267296055464877i64;
+    key = key ^ (key >> 27i64);
+    key = key * -4007235288047910137i64;
+    key = key ^ (key >> 31i64);
+    pass key;
+};
+
+pub func:main = int32() {
+    int64:num_items = 10000i64;
+    
+    // 1. SList Stress
+    int64:slist = raw SList.create();
+    int64:i = 0i64;
+    while (i < num_items) {
+        drop raw SList.push_front(slist, i);
+        i = i + 1i64;
+    }
+    if (raw SList.count(slist) != num_items) { exit 2i32; }
+    
+    i = 0i64;
+    while (i < num_items) {
+        drop raw SList.pop_front(slist);
+        i = i + 1i64;
+    }
+    if (raw SList.count(slist) != 0i64) { exit 3i32; }
+    drop raw SList.destroy(slist);
+    
+    // 2. DList Stress
+    int64:dlist = raw DList.create();
+    i = 0i64;
+    while (i < num_items) {
+        drop raw DList.push_back(dlist, i);
+        i = i + 1i64;
+    }
+    if (raw DList.count(dlist) != num_items) { exit 4i32; }
+    
+    i = 0i64;
+    while (i < num_items) {
+        drop raw DList.pop_back(dlist);
+        i = i + 1i64;
+    }
+    if (raw DList.count(dlist) != 0i64) { exit 5i32; }
+    drop raw DList.destroy(dlist);
+    
+    // 3. SortedList Stress
+    int64:sorted = raw SortedList.create();
+    i = 0i64;
+    // use a smaller amount because insertion is O(N) linear scan
+    while (i < 1000i64) {
+        int64:rand_key = raw hash_int64(i);
+        // keep it positive and small for easier bounds
+        if (rand_key < 0i64) { rand_key = rand_key * -1i64; }
+        rand_key = rand_key % 10000i64;
+        drop raw SortedList.insert(sorted, rand_key);
+        i = i + 1i64;
+    }
+    if (raw SortedList.count(sorted) != 1000i64) { exit 6i32; }
+    drop raw SortedList.destroy(sorted);
+    
+    // 4. SkipList Stress
+    int64:skip = raw SkipList.create();
+    i = 0i64;
+    while (i < 2000i64) {
+        int64:rand_key = raw hash_int64(i);
+        drop raw SkipList.insert(skip, rand_key);
+        i = i + 1i64;
+    }
+    if (raw SkipList.count(skip) != 2000i64) { exit 7i32; }
+    
+    i = 0i64;
+    while (i < 1000i64) {
+        int64:rand_key = raw hash_int64(i);
+        drop raw SkipList.remove(skip, rand_key);
+        i = i + 1i64;
+    }
+    if (raw SkipList.count(skip) != 1000i64) { exit 8i32; }
+    drop raw SkipList.destroy(skip);
+
+    exit 0i32;
+};

@@ -1,0 +1,23 @@
+pub func:store64 = int8(int64:addr, int64:val) {
+    int64->:ptr = @cast_unchecked<int64->>(addr);
+    ptr[0i64] = val;
+    pass 0i8;
+};
+
+pub func:load64 = int64(int64:addr) {
+    int64->:ptr = @cast_unchecked<int64->>(addr);
+    pass ptr[0i64];
+};
+
+pub func:failsafe = int32(tbb32:err) { exit 1i32; };
+
+pub func:main = int32(int32:argc, wild int8->:argv) {
+    wild int8->:p = nodrop alloc(32i64);
+    int64:addr = (@cast_unchecked<int64>(p));
+    
+    drop raw store64(addr, 42i64);
+    int64:v = raw load64(addr);
+    
+    dalloc(p);
+    exit @cast_unchecked<int32>(v);
+};

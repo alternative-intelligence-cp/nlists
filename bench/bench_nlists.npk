@@ -1,0 +1,17 @@
+use "../src/doubly.npk".*;
+pub func:failsafe = int32(tbb32:err) { exit 1i32; };
+pub func:main = int32(int32:argc, wild int8->:argv) {
+    int64:dlist = raw DList.create();
+    int64:i = 0i64;
+    while (i < 1000000i64) {
+        drop raw DList.push_back(dlist, i);
+        i = i + 1i64;
+    }
+    i = 0i64;
+    while (i < 1000000i64) {
+        drop raw DList.pop_front(dlist);
+        i = i + 1i64;
+    }
+    drop raw DList.destroy(dlist);
+    exit 0i32;
+};

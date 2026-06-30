@@ -1,0 +1,206 @@
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+PARSING CAST: token=CAST_UNCHECKED isUnchecked=1
+[DEBUG CODEGEN CALL] Generating call to: nodrop
+[DEBUG CODEGEN CALL] Generating call to: alloc
+[DEBUG IR_GEN] Initializer generated for 'blk', value = 0x63f88cc2a3a0
+[DEBUG IR_GEN] InitVal type: 0x63f88cc27af0
+[DEBUG IR_GEN] Default builder.CreateStore for blk
+[DEBUG IR_GEN] Initializer generated for 'handle', value = 0x63f88cc216e0
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for handle
+[DEBUG ASSIGNMENT] op=184, leftType=1 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'handle', value = 0x63f88cc2e490
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for handle
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'head_block', value = 0x63f88cc2fd20
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for head_block
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'block_size', value = 0x63f88cc309c0
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for block_size
+[DEBUG WHILE] Parsing condition for while loop. NodeType: 2
+   BinaryOp Type: 191
+[DEBUG IR_GEN] Initializer generated for 'next_block', value = 0x63f88cc2d6b0
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for next_block
+[DEBUG CODEGEN CALL] Generating call to: dalloc
+[DEBUG ASSIGNMENT] op=184, leftType=1 (POINTER_MEMBER=7)
+[DEBUG CODEGEN CALL] Generating call to: dalloc
+[DEBUG IR_GEN] Initializer generated for 'handle', value = 0x63f88cc33780
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for handle
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'free_head', value = 0x63f88cc34170
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for free_head
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'node_size', value = 0x63f88cc34d30
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for node_size
+[DEBUG IR_GEN] Initializer generated for 'next_free', value = 0x63f88cc35c40
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for next_free
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'i', value = 0x63f88cc2bd50
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for i
+[DEBUG WHILE] Parsing condition for while loop. NodeType: 2
+   BinaryOp Type: 192
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 1
+[DEBUG ASSIGNMENT] op=184, leftType=1 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'block_size', value = 0x63f88cc3ddc0
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for block_size
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'head_block', value = 0x63f88cc31ab0
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for head_block
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'offset', value = 0x63f88cc369c0
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for offset
+[DEBUG CODEGEN CALL] Generating call to: nodrop
+[DEBUG CODEGEN CALL] Generating call to: alloc
+[DEBUG IR_GEN] Initializer generated for 'blk', value = 0x63f88cc41180
+[DEBUG IR_GEN] InitVal type: 0x63f88cc27af0
+[DEBUG IR_GEN] Default builder.CreateStore for blk
+[DEBUG IR_GEN] Initializer generated for 'new_block', value = 0x63f88cc421a0
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for new_block
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG ASSIGNMENT] op=184, leftType=1 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=184, leftType=1 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG CODEGEN CALL] Generating call to: nodrop
+[DEBUG CODEGEN CALL] Generating call to: alloc
+[DEBUG IR_GEN] Initializer generated for 'blk', value = 0x63f88cc43a20
+[DEBUG IR_GEN] InitVal type: 0x63f88cc27af0
+[DEBUG IR_GEN] Default builder.CreateStore for blk
+[DEBUG IR_GEN] Initializer generated for 'new_block', value = 0x63f88cc44550
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for new_block
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG ASSIGNMENT] op=184, leftType=1 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=184, leftType=1 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'ptr', value = 0x63f88cc45900
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for ptr
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'j', value = 0x63f88cc2bd50
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for j
+[DEBUG WHILE] Parsing condition for while loop. NodeType: 2
+   BinaryOp Type: 192
+[DEBUG ASSIGNMENT] op=184, leftType=1 (POINTER_MEMBER=7)
+[DEBUG IR_GEN] Initializer generated for 'handle', value = 0x63f88cc48000
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for handle
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG IR_GEN] Initializer generated for 'free_head', value = 0x63f88cc48de0
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for free_head
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=184, leftType=3 (POINTER_MEMBER=7)
+[DEBUG-XXX] op: 177, left: 1, right: 0
+[DEBUG CODEGEN CALL] Generating call to: proc_exit
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to expression.
+[DEBUG CODEGEN CALL] Generating call to: NodeAllocator_create
+[DEBUG BEFORE MOD-ALIAS] func_name=NodeAllocator_create, map_ptr=0x63f88cc01a00, direct_func=(nil)
+[DEBUG MOD-ALIAS] func_name=NodeAllocator_create, map_size=1
+[DEBUG MOD-ALIAS] Trying allocator.NodeAllocator_create ... FOUND
+[DEBUG FFI OUTER] allocator.NodeAllocator_create is_extern=0, isPointerTy=1, hasExt=0, isDecl=0
+[DEBUG IR_GEN] Initializer generated for 'allocator', value = 0x63f88cc51850
+[DEBUG IR_GEN] InitVal type: 0x63f88cc27af0
+[DEBUG IR_GEN] Default builder.CreateStore for allocator
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to expression.
+[DEBUG CODEGEN CALL] Generating call to: NodeAllocator_alloc
+[DEBUG BEFORE MOD-ALIAS] func_name=NodeAllocator_alloc, map_ptr=0x63f88cc01a00, direct_func=(nil)
+[DEBUG MOD-ALIAS] func_name=NodeAllocator_alloc, map_size=1
+[DEBUG MOD-ALIAS] Trying allocator.NodeAllocator_alloc ... FOUND
+[DEBUG FFI OUTER] allocator.NodeAllocator_alloc is_extern=0, isPointerTy=0, hasExt=0, isDecl=0
+[DEBUG IR_GEN] Initializer generated for 'node1', value = 0x63f88cc51c10
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for node1
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to expression.
+[DEBUG CODEGEN CALL] Generating call to: NodeAllocator_alloc
+[DEBUG BEFORE MOD-ALIAS] func_name=NodeAllocator_alloc, map_ptr=0x63f88cc01a00, direct_func=(nil)
+[DEBUG MOD-ALIAS] func_name=NodeAllocator_alloc, map_size=1
+[DEBUG MOD-ALIAS] Trying allocator.NodeAllocator_alloc ... FOUND
+[DEBUG FFI OUTER] allocator.NodeAllocator_alloc is_extern=0, isPointerTy=0, hasExt=0, isDecl=0
+[DEBUG IR_GEN] Initializer generated for 'node2', value = 0x63f88cc52230
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for node2
+[DEBUG IR_GEN] Initializer generated for 'diff', value = 0x63f88cc52630
+[DEBUG IR_GEN] InitVal type: 0x63f88cc025a8
+[DEBUG IR_GEN] Default builder.CreateStore for diff
+[DEBUG IR_GEN] Initializer generated for 'code', value = 0x63f88cc52b30
+[DEBUG IR_GEN] InitVal type: 0x63f88cc02590
+[DEBUG IR_GEN] Default builder.CreateStore for code
+[DEBUG CODEGEN CALL] Generating call to: dalloc
+[DEBUG CODEGEN CALL] Generating call to: proc_exit
+[1m:2:5: [0m[1;33mwarning[0m: [1m[unused-parameter] parameter 'err' is unused in function 'failsafe'[0m
+
+[1m:3:5: [0m[1;33mwarning[0m: [1m[unused-parameter] parameter 'argc' is unused in function 'main'[0m
+
+[1m:3:5: [0m[1;33mwarning[0m: [1m[unused-parameter] parameter 'argv' is unused in function 'main'[0m
+
+[1mSummary: [0m[1;33m3 warnings[0m

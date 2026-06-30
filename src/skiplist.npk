@@ -1,0 +1,254 @@
+// src/skiplist.npk
+use "allocator.npk".*;
+use "types.npk".*;
+use "mem.npk".*;
+
+pub Type:SkipList = {
+    // Header layout (48 bytes):
+    // 0..7: head node
+    // 8..15: count
+    // 16..23: max_level
+    // 24..31: allocator
+    // 32..39: current level
+    // 40..47: rng seed
+
+    func:create = int64() {
+        wild int8->:header_ptr = nodrop alloc(48i64);
+        if (header_ptr == NULL) { pass 0i64; }
+        
+        int64:header = (@cast_unchecked<int64>(header_ptr)) & 281474976710655i64;
+        
+        // Max level = 16. Each node = 8 bytes val + 16 * 8 bytes forward = 136 bytes.
+        int64:allocator = raw NodeAllocator.create(136i64);
+        if (allocator == 0i64) {
+            dalloc(header_ptr);
+            pass 0i64;
+        }
+
+        // Allocate head node
+        int64:head = raw NodeAllocator.alloc(allocator);
+        if (head == 0i64) {
+            drop raw NodeAllocator.destroy(allocator);
+            dalloc(header_ptr);
+            pass 0i64;
+        }
+        
+        // Zero head forwards
+        int64:i = 0i64;
+        while (i < 16i64) {
+            drop raw store64(head + 8i64 + (i * 8i64), 0i64);
+            i = i + 1i64;
+        }
+
+        drop raw store64(header + 0i64, head);
+        drop raw store64(header + 8i64, 0i64);  // count
+        drop raw store64(header + 16i64, 16i64); // max_level
+        drop raw store64(header + 24i64, allocator);
+        drop raw store64(header + 32i64, 1i64);  // current level
+        drop raw store64(header + 40i64, 12345i64); // seed
+
+        pass header;
+    };
+
+    func:destroy = int8(int64:header) {
+        if (header == 0i64) { pass 0i8; }
+        int64:allocator = raw load64(header + 24i64);
+        drop raw NodeAllocator.destroy(allocator);
+        dalloc(@cast_unchecked<any->>(header));
+        pass 0i8;
+    };
+
+    func:random_level = int64(int64:header) {
+        int64:seed = raw load64(header + 40i64);
+        
+        int64:level = 1i64;
+        int64:max_lvl = raw load64(header + 16i64);
+
+        while (level < max_lvl) {
+            seed = (seed * 1103515245i64 + 12345i64) & 2147483647i64;
+            if (((seed >> 16i64) & 1i64) == 1i64) {
+                break;
+            }
+            level = level + 1i64;
+        }
+
+        drop raw store64(header + 40i64, seed);
+        pass level;
+    };
+
+    func:insert = int8(int64:header, int64:val) {
+        if (header == 0i64) { pass 1i8; }
+        
+        int64:head = raw load64(header + 0i64);
+        int64:level = raw load64(header + 32i64);
+
+        // Track path
+        // Use an array on the stack (16 * 8 = 128 bytes)
+        wild int8->:update_ptr = nodrop alloc(128i64);
+        int64:update = (@cast_unchecked<int64>(update_ptr)) & 281474976710655i64;
+
+        int64:curr = head;
+        int64:i = level - 1i64;
+        
+        while (i >= 0i64) {
+            int64:next = raw load64(curr + 8i64 + (i * 8i64));
+            while (next != 0i64) {
+                if (raw load64(next + 0i64) < val) {
+                    curr = next;
+                    next = raw load64(curr + 8i64 + (i * 8i64));
+                } else {
+                    break;
+                }
+            }
+            drop raw store64(update + (i * 8i64), curr);
+            i = i - 1i64;
+        }
+
+        int64:seed = raw load64(header + 40i64);
+        int64:new_level = 1i64;
+        int64:max_lvl = raw load64(header + 16i64);
+        while (new_level < max_lvl) {
+            seed = (seed * 1103515245i64 + 12345i64) & 2147483647i64;
+            if (((seed >> 16i64) & 1i64) == 1i64) {
+                break;
+            }
+            new_level = new_level + 1i64;
+        }
+        drop raw store64(header + 40i64, seed);
+
+        if (new_level > level) {
+            i = level;
+            while (i < new_level) {
+                drop raw store64(update + (i * 8i64), head);
+                i = i + 1i64;
+            }
+            drop raw store64(header + 32i64, new_level);
+            level = new_level;
+        }
+
+        int64:allocator = raw load64(header + 24i64);
+        int64:node = raw NodeAllocator.alloc(allocator);
+        drop raw store64(node + 0i64, val);
+
+        i = 0i64;
+        while (i < new_level) {
+            int64:upd_node = raw load64(update + (i * 8i64));
+            int64:fwd = raw load64(upd_node + 8i64 + (i * 8i64));
+            
+            drop raw store64(node + 8i64 + (i * 8i64), fwd);
+            drop raw store64(upd_node + 8i64 + (i * 8i64), node);
+            
+            i = i + 1i64;
+        }
+
+        while (i < 16i64) {
+            drop raw store64(node + 8i64 + (i * 8i64), 0i64);
+            i = i + 1i64;
+        }
+
+        dalloc(update_ptr);
+
+        int64:count = raw load64(header + 8i64);
+        drop raw store64(header + 8i64, count + 1i64);
+        pass 0i8;
+    };
+
+    func:contains = int8(int64:header, int64:val) {
+        if (header == 0i64) { pass 0i8; }
+        
+        int64:head = raw load64(header + 0i64);
+        int64:level = raw load64(header + 32i64);
+        int64:curr = head;
+        int64:i = level - 1i64;
+
+        while (i >= 0i64) {
+            int64:next = raw load64(curr + 8i64 + (i * 8i64));
+            while (next != 0i64) {
+                int64:next_val = raw load64(next + 0i64);
+                if (next_val < val) {
+                    curr = next;
+                    next = raw load64(curr + 8i64 + (i * 8i64));
+                } else {
+                    break;
+                }
+            }
+            i = i - 1i64;
+        }
+
+        int64:fwd = raw load64(curr + 8i64); // level 0 forward
+        if (fwd != 0i64) {
+            if (raw load64(fwd + 0i64) == val) {
+                pass 1i8;
+            }
+        }
+        pass 0i8;
+    };
+
+    func:remove = int8(int64:header, int64:val) {
+        if (header == 0i64) { pass 0i8; }
+        
+        int64:head = raw load64(header + 0i64);
+        int64:level = raw load64(header + 32i64);
+
+        wild int8->:update_ptr = nodrop alloc(128i64);
+        int64:update = (@cast_unchecked<int64>(update_ptr)) & 281474976710655i64;
+
+        int64:curr = head;
+        int64:i = level - 1i64;
+        
+        while (i >= 0i64) {
+            int64:next = raw load64(curr + 8i64 + (i * 8i64));
+            while (next != 0i64) {
+                if (raw load64(next + 0i64) < val) {
+                    curr = next;
+                    next = raw load64(curr + 8i64 + (i * 8i64));
+                } else {
+                    break;
+                }
+            }
+            drop raw store64(update + (i * 8i64), curr);
+            i = i - 1i64;
+        }
+
+        int64:fwd = raw load64(curr + 8i64);
+        if (fwd != 0i64) {
+            if (raw load64(fwd + 0i64) == val) {
+                i = 0i64;
+                while (i < level) {
+                    int64:upd_node = raw load64(update + (i * 8i64));
+                    if (raw load64(upd_node + 8i64 + (i * 8i64)) != fwd) {
+                        break;
+                    }
+                    drop raw store64(upd_node + 8i64 + (i * 8i64), raw load64(fwd + 8i64 + (i * 8i64)));
+                    i = i + 1i64;
+                }
+
+                int64:allocator = raw load64(header + 24i64);
+                drop raw NodeAllocator.free(allocator, fwd);
+                
+                while (level > 1i64) {
+                    if (raw load64(head + 8i64 + ((level - 1i64) * 8i64)) == 0i64) {
+                        level = level - 1i64;
+                    } else {
+                        break;
+                    }
+                }
+                drop raw store64(header + 32i64, level);
+                
+                int64:count = raw load64(header + 8i64);
+                drop raw store64(header + 8i64, count - 1i64);
+
+                dalloc(update_ptr);
+                pass 1i8;
+            }
+        }
+        
+        dalloc(update_ptr);
+        pass 0i8;
+    };
+
+    func:count = int64(int64:header) {
+        if (header == 0i64) { pass 0i64; }
+        pass raw load64(header + 8i64);
+    };
+};

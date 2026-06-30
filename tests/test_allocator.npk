@@ -1,0 +1,48 @@
+use "../src/allocator.npk".*;
+
+pub func:failsafe = int32(tbb32:err) {
+    exit 1i32;
+};
+
+pub func:main = int32(int32:argc, wild int8->:argv) {
+    int64:allocator = raw NodeAllocator.create(16i64); // SNode size
+    if (allocator == 0i64) {
+        return 1i32;
+    }
+
+    // Test allocations
+    int64:n1 = raw NodeAllocator.alloc(allocator);
+    int64:n2 = raw NodeAllocator.alloc(allocator);
+    int64:n3 = raw NodeAllocator.alloc(allocator);
+
+    // Verify properties
+    if (n1 == 0i64) { return 2i32; }
+    if (n2 == 0i64) { return 3i32; }
+
+    // Test memory write/read
+    (@cast_unchecked<int64->>(n1))[0i64] = 12345i64;
+    (@cast_unchecked<int64->>(n2))[0i64] = 67890i64;
+
+    if ((@cast_unchecked<int64->>(n1))[0i64] != 12345i64) { return 4i32; }
+    if ((@cast_unchecked<int64->>(n2))[0i64] != 67890i64) { return 5i32; }
+
+    // Test free and reuse (free list)
+    drop raw NodeAllocator.free(allocator, n2);
+    int64:n4 = raw NodeAllocator.alloc(allocator);
+    
+    // n4 should be the same memory address as n2 since it was popped from free list
+    if (n4 != n2) { return 6i32; }
+    // It should also be zeroed out now!
+    if ((@cast_unchecked<int64->>(n4))[0i64] != 0i64) { return 7i32; }
+
+    // Test bulk allocation to force a block resize
+    int64:i = 0i64;
+    while (i < 5000i64) {
+        drop raw NodeAllocator.alloc(allocator);
+        i = i + 1i64;
+    }
+
+    drop raw NodeAllocator.destroy(allocator);
+    
+    exit 0i32;
+};

@@ -1,0 +1,67 @@
+use "../src/singly.npk".*;
+use "../src/doubly.npk".*;
+use "../src/circular.npk".*;
+use "../src/skiplist.npk".*;
+
+pub func:failsafe = int32(tbb32:err) {
+    exit 1i32;
+};
+
+pub func:main = int32(int32:argc, wild int8->:argv) {
+    // SList audit
+    int64:slist = raw SList.create();
+    int64:i = 0i64;
+    while (i < 100000i64) {
+        drop raw SList.push_front(slist, i);
+        i = i + 1i64;
+    }
+    drop raw SList.clear(slist);
+    if (raw SList.count(slist) != 0i64) { return 1i32; }
+    drop raw SList.destroy(slist);
+
+    // DList audit
+    int64:dlist = raw DList.create();
+    i = 0i64;
+    while (i < 100000i64) {
+        drop raw DList.push_back(dlist, i);
+        i = i + 1i64;
+    }
+    i = 0i64;
+    while (i < 100000i64) {
+        drop raw DList.pop_front(dlist);
+        i = i + 1i64;
+    }
+    if (raw DList.count(dlist) != 0i64) { return 2i32; }
+    drop raw DList.destroy(dlist);
+
+    // CList audit
+    int64:clist = raw CList.create();
+    i = 0i64;
+    while (i < 10000i64) {
+        drop raw CList.push_back(clist, i);
+        i = i + 1i64;
+    }
+    i = 0i64;
+    while (i < 10000i64) {
+        drop raw CList.pop_front(clist);
+        i = i + 1i64;
+    }
+    drop raw CList.destroy(clist);
+
+    // SkipList audit
+    int64:skiplist = raw SkipList.create();
+    i = 0i64;
+    while (i < 5000i64) {
+        drop raw SkipList.insert(skiplist, i);
+        i = i + 1i64;
+    }
+    i = 0i64;
+    while (i < 5000i64) {
+        drop raw SkipList.remove(skiplist, i);
+        i = i + 1i64;
+    }
+    if (raw SkipList.count(skiplist) != 0i64) { return 3i32; }
+    drop raw SkipList.destroy(skiplist);
+
+    exit 0i32;
+};

@@ -1,0 +1,40 @@
+use "../src/singly_v.npk".*;
+use "../src/types.npk".*;
+
+pub func:failsafe = int32(tbb32:err) {
+    exit 1i32;
+};
+
+pub func:main = int32(int32:argc, wild int8->:argv) {
+    int64:list = raw SListV.create();
+    if (list == 0i64) { return 1i32; }
+
+    // Test push_front
+    drop raw SListV.push_front(list, LIST_TAG_INT64, 10i64);
+    drop raw SListV.push_front(list, LIST_TAG_FLOAT64, 20i64);
+    if (raw SListV.count(list) != 2i64) { return 2i32; }
+
+    // Test pop_front values and tags
+    if (raw SListV.pop_front_tag(list) != LIST_TAG_FLOAT64) { return 3i32; }
+    if (raw SListV.pop_front_val(list) != 20i64) { return 4i32; }
+    drop raw SListV.pop_front(list);
+
+    if (raw SListV.pop_front_tag(list) != LIST_TAG_INT64) { return 5i32; }
+    if (raw SListV.pop_front_val(list) != 10i64) { return 6i32; }
+    drop raw SListV.pop_front(list);
+    if (raw SListV.count(list) != 0i64) { return 7i32; }
+
+    // Test push_back
+    drop raw SListV.push_back(list, LIST_TAG_PTR, 100i64);
+    drop raw SListV.push_back(list, LIST_TAG_BYTES, 200i64);
+    if (raw SListV.count(list) != 2i64) { return 8i32; }
+
+    if (raw SListV.pop_front_tag(list) != LIST_TAG_PTR) { return 9i32; }
+    if (raw SListV.pop_front_val(list) != 100i64) { return 10i32; }
+    drop raw SListV.pop_front(list);
+
+    // Cleanup
+    drop raw SListV.destroy(list);
+    
+    exit 0i32;
+};

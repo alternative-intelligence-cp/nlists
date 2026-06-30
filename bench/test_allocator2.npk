@@ -1,0 +1,14 @@
+use "../src/allocator.npk".*;
+pub func:failsafe = int32(tbb32:err) { exit 1i32; };
+pub func:main = int32(int32:argc, wild int8->:argv) {
+    int64:allocator = raw NodeAllocator.create(24i64);
+    if (allocator == 0i64) { exit 1i32; }
+    int64:node1 = raw NodeAllocator.alloc(allocator);
+    int64:node2 = raw NodeAllocator.alloc(allocator);
+    
+    int64:diff = node2 - node1;
+    int32:code = @cast_unchecked<int32>(diff / 256i64);
+    
+    dalloc(allocator);
+    exit code;
+};

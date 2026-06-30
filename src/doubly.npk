@@ -1,0 +1,277 @@
+// src/doubly.npk
+use "allocator.npk".*;
+use "types.npk".*;
+use "mem.npk".*;
+
+pub Type:DList = {
+    // create() returns int64 pointer to DListHeader
+    func:create = int64() {
+        wild int8->:header_ptr = nodrop alloc(32i64);
+        if (header_ptr == NULL) { pass 0i64; }
+        
+        int64:header = (@cast_unchecked<int64>(header_ptr)) & 281474976710655i64;
+        
+        // Setup node allocator for 24-byte DNode
+        int64:allocator = raw NodeAllocator.create(24i64) & 281474976710655i64;
+        if (allocator == 0i64) {
+            dalloc(header_ptr);
+            pass 0i64;
+        }
+
+        drop raw store64(header + 0i64, 0i64); // head
+        drop raw store64(header + 8i64, 0i64); // tail
+        drop raw store64(header + 16i64, 0i64); // count
+        drop raw store64(header + 24i64, allocator);
+
+        pass header;
+    };
+
+    func:destroy = int8(int64:header) {
+        if (header == 0i64) { pass 0i8; }
+        int64:allocator = raw load64(header + 24i64);
+        drop raw NodeAllocator.destroy(allocator);
+        dalloc(@cast_unchecked<any->>(header));
+        pass 0i8;
+    };
+
+    func:push_front = int8(int64:header, int64:val) {
+        if (header == 0i64) { pass 1i8; }
+        int64:allocator = raw load64(header + 24i64);
+        int64:node = raw NodeAllocator.alloc(allocator) & 281474976710655i64;
+        if (node == 0i64) { pass 1i8; }
+
+        int64:head = raw load64(header + 0i64);
+        
+        drop raw store64(node + 0i64, val);
+        drop raw store64(node + 8i64, head);
+        drop raw store64(node + 16i64, 0i64);
+        
+        drop raw store64(header + 0i64, node);
+
+        if (head == 0i64) {
+            drop raw store64(header + 8i64, node); // set tail
+        } else {
+            drop raw store64(head + 16i64, node);  // prev of old head
+        }
+
+        int64:count = raw load64(header + 16i64);
+        drop raw store64(header + 16i64, count + 1i64);
+        
+        pass 0i8;
+    };
+
+    func:push_back = int8(int64:header, int64:val) {
+        if (header == 0i64) { pass 0i8; }
+        int64:allocator = raw load64(header + 24i64);
+        int64:node = raw NodeAllocator.alloc(allocator);
+        if (node == 0i64) { pass 0i8; }
+        
+        int64:tail = raw load64(header + 8i64);
+
+        drop raw store64(node + 0i64, val);
+        drop raw store64(node + 8i64, 0i64); // next is NULL
+        drop raw store64(node + 16i64, tail); // prev is old tail
+
+        drop raw store64(header + 8i64, node); // new tail
+
+        if (tail == 0i64) {
+            drop raw store64(header + 0i64, node); // set head
+        } else {
+            drop raw store64(tail + 8i64, node);   // next of old tail
+        }
+
+        int64:count = raw load64(header + 16i64);
+        drop raw store64(header + 16i64, count + 1i64);
+        
+        pass 1i8;
+    };
+
+    func:pop_front = int64(int64:header) {
+        if (header == 0i64) { pass 0i64; }
+        int64:head = raw load64(header + 0i64);
+        if (head == 0i64) { pass 0i64; }
+
+        int64:val = raw load64(head + 0i64);
+        int64:next = raw load64(head + 8i64);
+
+        drop raw store64(header + 0i64, next);
+
+        if (next == 0i64) {
+            drop raw store64(header + 8i64, 0i64);
+        } else {
+            drop raw store64(next + 16i64, 0i64);
+        }
+
+        int64:count = raw load64(header + 16i64);
+        drop raw store64(header + 16i64, count - 1i64);
+
+        int64:allocator = raw load64(header + 24i64);
+        drop raw NodeAllocator.free(allocator, head);
+
+        pass val;
+    };
+
+    func:pop_back = int64(int64:header) {
+        if (header == 0i64) { pass 0i64; }
+        int64:tail = raw load64(header + 8i64);
+        if (tail == 0i64) { pass 0i64; }
+
+        int64:val = raw load64(tail + 0i64);
+        int64:prev = raw load64(tail + 16i64);
+
+        drop raw store64(header + 8i64, prev);
+
+        if (prev == 0i64) {
+            drop raw store64(header + 0i64, 0i64);
+        } else {
+            drop raw store64(prev + 8i64, 0i64);
+        }
+
+        int64:count = raw load64(header + 16i64);
+        drop raw store64(header + 16i64, count - 1i64);
+
+        int64:allocator = raw load64(header + 24i64);
+        drop raw NodeAllocator.free(allocator, tail);
+
+        pass val;
+    };
+
+    func:clear = int8(int64:header) {
+        if (header == 0i64) { pass 0i8; }
+        int64:allocator = raw load64(header + 24i64);
+        int64:head = raw load64(header + 0i64);
+        
+        while (head != 0i64) {
+            int64:next = raw load64(head + 8i64);
+            drop raw NodeAllocator.free(allocator, head);
+            head = next;
+        }
+
+        drop raw store64(header + 0i64, 0i64);
+        drop raw store64(header + 8i64, 0i64);
+        drop raw store64(header + 16i64, 0i64);
+        
+        pass 0i8;
+    };
+
+    func:contains = int8(int64:header, int64:val) {
+        if (header == 0i64) { pass 0i8; }
+        int64:curr = raw load64(header + 0i64);
+        while (curr != 0i64) {
+            if (raw load64(curr + 0i64) == val) {
+                pass 1i8;
+            }
+            curr = raw load64(curr + 8i64);
+        }
+        pass 0i8;
+    };
+
+    func:remove = int8(int64:header, int64:val) {
+        if (header == 0i64) { pass 0i8; }
+        int64:curr = raw load64(header + 0i64);
+
+        while (curr != 0i64) {
+            if (raw load64(curr + 0i64) == val) {
+                int64:next = raw load64(curr + 8i64);
+                int64:prev = raw load64(curr + 16i64);
+
+                if (prev == 0i64) {
+                    drop raw store64(header + 0i64, next);
+                } else {
+                    drop raw store64(prev + 8i64, next);
+                }
+
+                if (next == 0i64) {
+                    drop raw store64(header + 8i64, prev);
+                } else {
+                    drop raw store64(next + 16i64, prev);
+                }
+
+                int64:count = raw load64(header + 16i64);
+                drop raw store64(header + 16i64, count - 1i64);
+
+                int64:allocator = raw load64(header + 24i64);
+                drop raw NodeAllocator.free(allocator, curr);
+
+                pass 1i8;
+            }
+            curr = raw load64(curr + 8i64);
+        }
+        pass 0i8;
+    };
+
+    // Insert new node containing `val` before the node that contains `target`
+    func:insert_before = int8(int64:header, int64:target, int64:val) {
+        if (header == 0i64) { pass 1i8; }
+        int64:curr = raw load64(header + 0i64);
+
+        while (curr != 0i64) {
+            if (raw load64(curr + 0i64) == target) {
+                int64:allocator = raw load64(header + 24i64);
+                int64:node = raw NodeAllocator.alloc(allocator) & 281474976710655i64;
+                if (node == 0i64) { pass 1i8; }
+
+                int64:prev = raw load64(curr + 16i64);
+
+                drop raw store64(node + 0i64, val);
+                drop raw store64(node + 8i64, curr);
+                drop raw store64(node + 16i64, prev);
+
+                drop raw store64(curr + 16i64, node);
+
+                if (prev == 0i64) {
+                    drop raw store64(header + 0i64, node);
+                } else {
+                    drop raw store64(prev + 8i64, node);
+                }
+
+                int64:count = raw load64(header + 16i64);
+                drop raw store64(header + 16i64, count + 1i64);
+
+                pass 0i8;
+            }
+            curr = raw load64(curr + 8i64);
+        }
+        pass 1i8;
+    };
+
+    // Insert new node containing `val` after the node that contains `target`
+    func:insert_after = int8(int64:header, int64:target, int64:val) {
+        if (header == 0i64) { pass 1i8; }
+        int64:curr = raw load64(header + 0i64);
+
+        while (curr != 0i64) {
+            if (raw load64(curr + 0i64) == target) {
+                int64:allocator = raw load64(header + 24i64);
+                int64:node = raw NodeAllocator.alloc(allocator) & 281474976710655i64;
+                if (node == 0i64) { pass 1i8; }
+
+                int64:next = raw load64(curr + 8i64);
+
+                drop raw store64(node + 0i64, val);
+                drop raw store64(node + 8i64, next);
+                drop raw store64(node + 16i64, curr);
+
+                drop raw store64(curr + 8i64, node);
+
+                if (next == 0i64) {
+                    drop raw store64(header + 8i64, node);
+                } else {
+                    drop raw store64(next + 16i64, node);
+                }
+
+                int64:count = raw load64(header + 16i64);
+                drop raw store64(header + 16i64, count + 1i64);
+
+                pass 0i8;
+            }
+            curr = raw load64(curr + 8i64);
+        }
+        pass 1i8;
+    };
+    
+    func:count = int64(int64:header) {
+        if (header == 0i64) { pass 0i64; }
+        pass raw load64(header + 16i64);
+    };
+};
