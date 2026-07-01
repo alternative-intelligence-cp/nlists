@@ -1,8 +1,8 @@
 pub func:failsafe = int32(tbb32:err) { exit 1i32; };
-pub func:main = int32(int32:argc, wild int8->:argv) {
+pub func:main = int32(int32:argc, int8[]->:argv) {
     wild int8->:blk = nodrop alloc(64i64);
-    int64:handle = @cast_unchecked<int64>(blk);
-    <-(@cast_unchecked<int64->>(handle + 24i64)) = 32768i64;
+    int64:handle = cast_unchecked<int64>(blk);
+    <-(cast_unchecked<int64->>(handle + 24i64)) = 32768i64;
     dalloc(blk);
     exit 0i32;
 };

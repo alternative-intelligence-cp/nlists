@@ -1,7 +1,0 @@
-pub func:failsafe = int32(tbb32:err) { exit 1i32; };
-pub func:main = int32(int32:argc, wild int8->:argv) {
-    wild int8->:ptr = nodrop alloc(32i64);
-    int64:val_any = @cast_unchecked<int64>(<-@cast_unchecked<any->>(ptr));
-    dalloc(ptr);
-    return @cast_unchecked<int32>(val_any);
-};

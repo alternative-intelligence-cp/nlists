@@ -1,59 +1,62 @@
-use "mem.npk".*;
 // src/types.npk
 
-// Tag constants for Universal Variants (SListV, DListV)
-pub int64:LIST_TAG_EMPTY   = 0i64;
-pub int64:LIST_TAG_INT64   = 1i64;
-pub int64:LIST_TAG_FLOAT64 = 2i64;
-pub int64:LIST_TAG_PTR     = 3i64;
-pub int64:LIST_TAG_BYTES   = 4i64;
+// Common error codes
+pub fixed int32:ERR_EMPTY = 1i32;
+pub fixed int32:ERR_OOM = 2i32;
+pub fixed int32:ERR_OUT_OF_BOUNDS = 3i32;
 
-// Singly-Linked Node (int64 payload)
-// Size: 16 bytes
-pub struct:SNode = {
-    int64:val;      // 0..7
-    int64:next;     // 8..15
+pub fixed int64:GETRANDOM = 318i64;
+
+pub struct:SNode<T> = {
+    *T:val;
+    Handle<SNode<T> >:next;
 };
 
-// Singly-Linked Universal Node (tagged payload)
-// Size: 24 bytes
-pub struct:SNodeV = {
-    int64:tag;      // 0..7
-    int64:val;      // 8..15
-    int64:next;     // 16..23
+pub struct:SListHeader<T> = {
+    Handle<SNode<T> >:head;
+    Handle<SNode<T> >:tail;
+    int64:count;
+    arena<SNode<T> >:node_arena;
 };
 
-// Doubly-Linked Node (int64 payload)
-// Size: 24 bytes
-pub struct:DNode = {
-    int64:val;      // 0..7
-    int64:next;     // 8..15
-    int64:prev;     // 16..23
+pub struct:DNode<T> = {
+    *T:val;
+    Handle<DNode<T> >:next;
+    Handle<DNode<T> >:prev;
 };
 
-// Doubly-Linked Universal Node (tagged payload)
-// Size: 32 bytes (cache line friendly)
-pub struct:DNodeV = {
-    int64:tag;      // 0..7
-    int64:val;      // 8..15
-    int64:next;     // 16..23
-    int64:prev;     // 24..31
+pub struct:DListHeader<T> = {
+    Handle<DNode<T> >:head;
+    Handle<DNode<T> >:tail;
+    int64:count;
+    arena<DNode<T> >:node_arena;
 };
 
-// SListHeader handles singly-linked states
-// Size: 32 bytes
-pub struct:SListHeader = {
-    int64:head;      // 0..7
-    int64:tail;      // 8..15
-    int64:count;     // 16..23
-    int64:allocator; // 24..31 (handle to NodeAllocator)
+pub struct:CNode<T> = {
+    *T:val;
+    Handle<CNode<T> >:next;
 };
 
-// DListHeader handles doubly-linked states
-// Size: 32 bytes
-pub struct:DListHeader = {
-    int64:head;      // 0..7
-    int64:tail;      // 8..15
-    int64:count;     // 16..23
-    int64:allocator; // 24..31
+pub struct:CListHeader<T> = {
+    Handle<CNode<T> >:tail;
+    int64:count;
+    arena<CNode<T> >:node_arena;
+};
+
+pub struct:SkipNode<T> = {
+    *T:val;
+    Handle<SkipNode<T> >[16]:next;
+};
+
+pub struct:SkipListHeader<T> = {
+    Handle<SkipNode<T> >:head;
+    int64:count;
+    int64:max_level;
+    int64:current_level;
+    int64:seed;
+    arena<SkipNode<T> >:node_arena;
+};
+
+pub struct:SortedListHeader<T> = {
+    int64:skip_list_header;
 };

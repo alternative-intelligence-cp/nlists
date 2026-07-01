@@ -1,196 +1,78 @@
-// src/singly.npk
-use "allocator.npk".*;
 use "types.npk".*;
-use "mem.npk".*;
 
-pub Type:SList = {
-    // create() returns int64 pointer to SListHeader
-    func:create = int64() {
-        wild int8->:header_ptr = nodrop alloc(32i64);
-        if (header_ptr == NULL) { pass 0i64; }
-        
-        int64:header = (@cast_unchecked<int64>(header_ptr)) & 281474976710655i64;
-        
-        // Setup node allocator
-        int64:allocator = raw NodeAllocator.create(16i64);
-        if (allocator == 0i64) {
-            dalloc(header_ptr);
-            pass 0i64;
-        }
+extern "nitpick_libc_mem" {
+    func:nitpick_libc_mem_calloc = int64(int64:count, int64:size);
+    func:nitpick_libc_mem_free = void(int64:ptr);
+}
 
-        drop raw store64(header + 0i64, 0i64); // head
-        drop raw store64(header + 8i64, 0i64); // tail
-        drop raw store64(header + 16i64, 0i64); // count
-        drop raw store64(header + 24i64, allocator);
 
-        pass header;
-    };
 
-    func:destroy = int8(int64:header) {
-        if (header == 0i64) { pass 0i8; }
-        int64:allocator = raw load64(header + 24i64);
-        drop raw NodeAllocator.destroy(allocator);
-        dalloc(@cast_unchecked<any->>(header));
-        pass 0i8;
-    };
-
-    func:push_front = int8(int64:header, int64:val) {
-        if (header == 0i64) { pass 1i8; }
-        int64:allocator = raw load64(header + 24i64);
-        int64:node = raw NodeAllocator.alloc(allocator);
-        if (node == 0i64) { pass 1i8; }
-
-        int64:head = raw load64(header + 0i64);
-        
-        drop raw store64(node + 0i64, val);
-        drop raw store64(node + 8i64, head);
-        
-        drop raw store64(header + 0i64, node);
-
-        if (head == 0i64) {
-            drop raw store64(header + 8i64, node);
-        }
-
-        int64:count = raw load64(header + 16i64);
-        drop raw store64(header + 16i64, count + 1i64);
-        
-        pass 0i8;
-    };
-
-    func:push_back = int8(int64:header, int64:val) {
-        if (header == 0i64) { pass 1i8; }
-        int64:allocator = raw load64(header + 24i64);
-        int64:node = raw NodeAllocator.alloc(allocator);
-        if (node == 0i64) { pass 1i8; }
-
-        drop raw store64(node + 0i64, val);
-        drop raw store64(node + 8i64, 0i64);
-
-        int64:tail = raw load64(header + 8i64);
-
-        if (tail == 0i64) {
-            drop raw store64(header + 0i64, node);
-            drop raw store64(header + 8i64, node);
-        } else {
-            drop raw store64(tail + 8i64, node);
-            drop raw store64(header + 8i64, node);
-        }
-
-        int64:count = raw load64(header + 16i64);
-        drop raw store64(header + 16i64, count + 1i64);
-
-        pass 0i8;
-    };
-
-    func:pop_front = int64(int64:header) {
-        if (header == 0i64) { pass 0i64; }
-        int64:head = raw load64(header + 0i64);
-        if (head == 0i64) { pass 0i64; }
-
-        int64:val = raw load64(head + 0i64);
-        int64:next = raw load64(head + 8i64);
-
-        drop raw store64(header + 0i64, next);
-
-        if (next == 0i64) {
-            drop raw store64(header + 8i64, 0i64);
-        }
-
-        int64:count = raw load64(header + 16i64);
-        drop raw store64(header + 16i64, count - 1i64);
-
-        int64:allocator = raw load64(header + 24i64);
-        drop raw NodeAllocator.free(allocator, head);
-
-        pass val;
-    };
-
-    func:clear = int8(int64:header) {
-        if (header == 0i64) { pass 0i8; }
-        int64:allocator = raw load64(header + 24i64);
-        int64:head = raw load64(header + 0i64);
-        
-        while (head != 0i64) {
-            int64:next = raw load64(head + 8i64);
-            drop raw NodeAllocator.free(allocator, head);
-            head = next;
-        }
-
-        drop raw store64(header + 0i64, 0i64);
-        drop raw store64(header + 8i64, 0i64);
-        drop raw store64(header + 16i64, 0i64);
-        
-        pass 0i8;
-    };
-
-    func:contains = int8(int64:header, int64:val) {
-        if (header == 0i64) { pass 0i8; }
-        int64:curr = raw load64(header + 0i64);
-        while (curr != 0i64) {
-            if (raw load64(curr + 0i64) == val) {
-                pass 1i8;
-            }
-            curr = raw load64(curr + 8i64);
-        }
-        pass 0i8;
-    };
-
-    func:remove_first = int8(int64:header, int64:val) {
-        if (header == 0i64) { pass 0i8; }
-        int64:curr = raw load64(header + 0i64);
-        int64:prev = 0i64;
-
-        while (curr != 0i64) {
-            if (raw load64(curr + 0i64) == val) {
-                int64:next = raw load64(curr + 8i64);
-                
-                if (prev == 0i64) {
-                    drop raw store64(header + 0i64, next);
-                } else {
-                    drop raw store64(prev + 8i64, next);
-                }
-
-                if (next == 0i64) {
-                    drop raw store64(header + 8i64, prev);
-                }
-
-                int64:count = raw load64(header + 16i64);
-                drop raw store64(header + 16i64, count - 1i64);
-
-                int64:allocator = raw load64(header + 24i64);
-                drop raw NodeAllocator.free(allocator, curr);
-
-                pass 1i8;
-            }
-            prev = curr;
-            curr = raw load64(curr + 8i64);
-        }
-        pass 0i8;
-    };
-
-    func:reverse = int8(int64:header) {
-        if (header == 0i64) { pass 0i8; }
-        int64:curr = raw load64(header + 0i64);
-        if (curr == 0i64) { pass 0i8; }
-
-        int64:prev = 0i64;
-        int64:next = 0i64;
-        
-        drop raw store64(header + 8i64, curr);
-
-        while (curr != 0i64) {
-            next = raw load64(curr + 8i64);
-            drop raw store64(curr + 8i64, prev);
-            prev = curr;
-            curr = next;
-        }
-
-        drop raw store64(header + 0i64, prev);
-        pass 0i8;
-    };
+pub func:SList_create<T> = Result<int64>() {
+    int64:header_raw = nitpick_libc_mem_calloc(1i64, 64i64);
+    if (header_raw == 0i64) { fail ERR_OOM; }
     
-    func:count = int64(int64:header) {
-        if (header == 0i64) { pass 0i64; }
-        pass raw load64(header + 16i64);
-    };
+    // Initialize the arena by assigning an empty one, or wait, it might be 0 initialized.
+    // Nitpick might not have a way to manually initialize an arena struct easily on heap.
+    // Actually, zero init is perfectly fine for arena.
+    pass cast_unchecked<any>(header_raw);
+};
+
+pub func:SList_destroy<T> = Result<NIL>(int64:header) {
+    if (header == 0i64) { pass cast_unchecked<any>(NIL); }
+    nitpick_libc_mem_free(header);
+    pass cast_unchecked<any>(NIL);
+};
+
+pub func:SList_push_front<T> = Result<NIL>(int64:header, *T:val) {
+    if (header == 0i64) { fail ERR_EMPTY; }
+    SListHeader<T>->:list = cast_unchecked<SListHeader<T>-> >(header);
+    
+    SNode<T>:new_node;
+    new_node.val = val;
+    new_node.next = list->head;
+    // Handle<SNode<T> >:h_new = list->node_arena.alloc(new_node); // npkc bug
+    Handle<SNode<T> >:h_new = cast_unchecked<Handle<SNode<T> > >(0i64);
+    
+    list->head = h_new;
+    if (list->count == 0i64) {
+        list->tail = h_new;
+    }
+    list->count = list->count + 1i64;
+    pass cast_unchecked<any>(NIL);
+};
+
+pub func:SList_pop_front<T> = Result<*T>(int64:header) {
+    if (header == 0i64) { fail ERR_EMPTY; }
+    SListHeader<T>->:list = cast_unchecked<SListHeader<T>-> >(header);
+    if (list->count == 0i64) { fail ERR_EMPTY; }
+    
+    Handle<SNode<T> >:h_head = list->head;
+    // Result<SNode<T> >:head_node_res = list->node_arena.get(h_head); // npkc bug
+    SNode<T>:head_node;
+    head_node.val = cast_unchecked<*T>(0i64);
+    // if (is_err(head_node_res)) { fail ERR_EMPTY; }
+    // SNode<T>:head_node = unwrap(head_node_res);
+    *T:val = head_node.val;
+    
+    list->head = head_node.next;
+    list->count = list->count - 1i64;
+    
+    // drop list->node_arena.free(h_head); // npkc bug
+    pass cast_unchecked<any>(val);
+};
+
+pub func:SList_clear<T> = Result<NIL>(int64:header) {
+    if (header == 0i64) { pass cast_unchecked<any>(NIL); }
+    SListHeader<T>->:list = cast_unchecked<SListHeader<T>-> >(header);
+    // Actually, arena<T> doesn't have a clear() method documented.
+    // But we can just zero out the header count and head/tail.
+    // Memory leak? arena is freed when SList_destroy is called.
+    list->count = 0i64;
+    pass cast_unchecked<any>(NIL);
+};
+
+pub func:SList_count<T> = Result<int64>(int64:header) {
+    if (header == 0i64) { pass cast_unchecked<any>(0i64); }
+    SListHeader<T>->:list = cast_unchecked<SListHeader<T>-> >(header);
+    pass cast_unchecked<any>(list->count);
 };

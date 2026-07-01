@@ -1,30 +1,30 @@
 use "../src/sorted.npk".*;
 
-pub func:failsafe = int32(tbb32:err) {
-    exit 1i32;
-};
 
-pub func:main = int32(int32:argc, wild int8->:argv) {
-    int64:list = raw SortedList.create();
-    if (list == 0i64) { return 1i32; }
 
-    drop raw SortedList.insert(list, 50i64);
-    drop raw SortedList.insert(list, 10i64);
-    drop raw SortedList.insert(list, 30i64);
-    drop raw SortedList.insert(list, 20i64);
-    drop raw SortedList.insert(list, 40i64);
+func:main = int32() {
+    int64:list = raw SortedList_create();
+    if (list == 0i64) { exit 1i32; }
 
-    if (raw SortedList.count(list) != 5i64) { return 2i32; }
+    drop SortedList_insert(list, 50i64);
+    drop SortedList_insert(list, 10i64);
+    drop SortedList_insert(list, 30i64);
+    drop SortedList_insert(list, 20i64);
+    drop SortedList_insert(list, 40i64);
 
-    if (raw SortedList.pop_front(list) != 10i64) { return 3i32; }
-    if (raw SortedList.pop_front(list) != 20i64) { return 4i32; }
-    if (raw SortedList.pop_front(list) != 30i64) { return 5i32; }
-    if (raw SortedList.pop_front(list) != 40i64) { return 6i32; }
-    if (raw SortedList.pop_front(list) != 50i64) { return 7i32; }
+    if (raw SortedList_count(list) != 5i64) { exit 2i32; }
+
+    if (raw SortedList_contains(list, 10i64) != 1i8) { exit 3i32; }
+    if (raw SortedList_remove(list, 10i64) != 1i8) { exit 4i32; }
+    if (raw SortedList_contains(list, 20i64) != 1i8) { exit 5i32; }
+    if (raw SortedList_remove(list, 20i64) != 1i8) { exit 6i32; }
+    if (raw SortedList_remove(list, 30i64) != 1i8) { exit 7i32; }
+    if (raw SortedList_remove(list, 40i64) != 1i8) { exit 8i32; }
+    if (raw SortedList_remove(list, 50i64) != 1i8) { exit 9i32; }
     
-    if (raw SortedList.count(list) != 0i64) { return 8i32; }
+    if (raw SortedList_count(list) != 0i64) { exit 10i32; }
 
-    drop raw SortedList.destroy(list);
+    drop SortedList_destroy(list);
     
     exit 0i32;
 };

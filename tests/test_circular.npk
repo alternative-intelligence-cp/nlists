@@ -1,27 +1,25 @@
 use "../src/circular.npk".*;
 
-pub func:failsafe = int32(tbb32:err) {
-    exit 1i32;
-};
 
-pub func:main = int32(int32:argc, wild int8->:argv) {
-    int64:list = raw CList.create();
-    if (list == 0i64) { return 1i32; }
 
-    drop raw CList.push_front(list, 10i64);
-    drop raw CList.push_front(list, 20i64);
-    drop raw CList.push_back(list, 5i64);
+func:main = int32() {
+    int64:list = raw CList_create();
+    if (list == 0i64) { exit 1i32; }
+
+    drop CList_push_front(list, 10i64);
+    drop CList_push_front(list, 20i64);
+    drop CList_push_back(list, 5i64);
     // State should be: 20 -> 10 -> 5 -> (loops to 20)
     
-    if (raw CList.count(list) != 3i64) { return 2i32; }
+    if (raw CList_count(list) != 3i64) { exit 2i32; }
 
-    if (raw CList.pop_front(list) != 20i64) { return 3i32; }
-    if (raw CList.pop_front(list) != 10i64) { return 4i32; }
-    if (raw CList.pop_front(list) != 5i64) { return 5i32; }
+    if (raw CList_pop_front(list) != 20i64) { exit 3i32; }
+    if (raw CList_pop_front(list) != 10i64) { exit 4i32; }
+    if (raw CList_pop_front(list) != 5i64) { exit 5i32; }
     
-    if (raw CList.count(list) != 0i64) { return 6i32; }
+    if (raw CList_count(list) != 0i64) { exit 6i32; }
 
-    drop raw CList.destroy(list);
+    drop CList_destroy(list);
     
     exit 0i32;
 };

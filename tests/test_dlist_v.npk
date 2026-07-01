@@ -1,46 +1,44 @@
 use "../src/doubly_v.npk".*;
 use "../src/types.npk".*;
 
-pub func:failsafe = int32(tbb32:err) {
-    exit 1i32;
-};
 
-pub func:main = int32(int32:argc, wild int8->:argv) {
+
+func:main = int32() {
     int64:list = raw DListV.create();
-    if (list == 0i64) { return 1i32; }
+    if (list == 0i64) { exit 1i32; }
 
     // Test push_front
-    drop raw DListV.push_front(list, LIST_TAG_INT64, 10i64);
-    drop raw DListV.push_front(list, LIST_TAG_FLOAT64, 20i64);
-    if (raw DListV.count(list) != 2i64) { return 2i32; }
+    drop DListV.push_front(list, LIST_TAG_INT64, 10i64);
+    drop DListV.push_front(list, LIST_TAG_FLOAT64, 20i64);
+    if (raw DListV.count(list) != 2i64) { exit 2i32; }
 
     // Test pop_front
-    if (raw DListV.pop_front_tag(list) != LIST_TAG_FLOAT64) { return 3i32; }
-    if (raw DListV.pop_front_val(list) != 20i64) { return 4i32; }
-    drop raw DListV.pop_front(list);
+    if (raw DListV.pop_front_tag(list) != LIST_TAG_FLOAT64) { exit 3i32; }
+    if (raw DListV.pop_front_val(list) != 20i64) { exit 4i32; }
+    drop DListV.pop_front(list);
     
-    if (raw DListV.pop_front_val(list) != 10i64) { return 5i32; }
-    drop raw DListV.pop_front(list);
-    if (raw DListV.count(list) != 0i64) { return 6i32; }
+    if (raw DListV.pop_front_val(list) != 10i64) { exit 5i32; }
+    drop DListV.pop_front(list);
+    if (raw DListV.count(list) != 0i64) { exit 6i32; }
 
     // Test push_back and pop_back
-    drop raw DListV.push_back(list, LIST_TAG_PTR, 100i64);
-    drop raw DListV.push_back(list, LIST_TAG_BYTES, 200i64);
-    drop raw DListV.push_back(list, LIST_TAG_INT64, 300i64);
-    if (raw DListV.count(list) != 3i64) { return 7i32; }
+    drop DListV.push_back(list, LIST_TAG_PTR, 100i64);
+    drop DListV.push_back(list, LIST_TAG_BYTES, 200i64);
+    drop DListV.push_back(list, LIST_TAG_INT64, 300i64);
+    if (raw DListV.count(list) != 3i64) { exit 7i32; }
 
-    if (raw DListV.pop_back_tag(list) != LIST_TAG_INT64) { return 8i32; }
-    if (raw DListV.pop_back_val(list) != 300i64) { return 9i32; }
-    drop raw DListV.pop_back(list);
+    if (raw DListV.pop_back_tag(list) != LIST_TAG_INT64) { exit 8i32; }
+    if (raw DListV.pop_back_val(list) != 300i64) { exit 9i32; }
+    drop DListV.pop_back(list);
 
-    if (raw DListV.pop_front_tag(list) != LIST_TAG_PTR) { return 10i32; }
-    if (raw DListV.pop_front_val(list) != 100i64) { return 11i32; }
-    drop raw DListV.pop_front(list);
+    if (raw DListV.pop_front_tag(list) != LIST_TAG_PTR) { exit 10i32; }
+    if (raw DListV.pop_front_val(list) != 100i64) { exit 11i32; }
+    drop DListV.pop_front(list);
     
-    if (raw DListV.count(list) != 1i64) { return 12i32; }
+    if (raw DListV.count(list) != 1i64) { exit 12i32; }
 
     // Cleanup
-    drop raw DListV.destroy(list);
+    drop DListV.destroy(list);
     
     exit 0i32;
 };

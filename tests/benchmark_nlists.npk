@@ -3,7 +3,6 @@ use "../src/singly.npk".*;
 use "../src/doubly.npk".*;
 use "../src/sorted.npk".*;
 use "../src/skiplist.npk".*;
-use "../src/mem.npk".*;
 
 pub func:failsafe = int32(tbb32:err) { exit 1i32; };
 
@@ -17,51 +16,43 @@ pub func:hash_int64 = int64(int64:key) {
     pass key;
 };
 
-pub func:main = int32() {
+func:main = int32() {
     // 100,000 insertions to benchmark
     int64:num_items = 100000i64;
     
     // 1. Benchmark SList Push Front
-    int64:slist = raw SList.create();
-    int64:i = 0i64;
-    while (i < num_items) {
-        drop raw SList.push_front(slist, i);
-        i = i + 1i64;
+    int64:slist = raw SList_create::<int64>();
+    till (num_items, 1i64) {
+        drop SList_push_front::<int64>(slist, $);
     }
-    drop raw SList.destroy(slist);
+    drop SList_destroy::<int64>(slist);
     
     // 2. Benchmark DList Push Back
-    int64:dlist = raw DList.create();
-    i = 0i64;
-    while (i < num_items) {
-        drop raw DList.push_back(dlist, i);
-        i = i + 1i64;
+    int64:dlist = raw DList_create::<int64>();
+    till (num_items, 1i64) {
+        drop DList_push_back::<int64>(dlist, $);
     }
-    drop raw DList.destroy(dlist);
+    drop DList_destroy::<int64>(dlist);
     
     // 3. Benchmark SkipList Insert
-    int64:skip = raw SkipList.create();
-    i = 0i64;
-    while (i < num_items) {
-        int64:rand_key = raw hash_int64(i);
+    int64:skip = raw SkipList_create::<int64>();
+    till (num_items, 1i64) {
+        int64:rand_key = raw hash_int64($);
         if (rand_key < 0i64) { rand_key = rand_key * -1i64; }
         // keep values manageable
         rand_key = rand_key % (num_items * 10i64);
-        drop raw SkipList.insert(skip, rand_key);
-        i = i + 1i64;
+        drop SkipList_insert::<int64>(skip, rand_key);
     }
     
     // 4. Benchmark SkipList Read
-    i = 0i64;
-    while (i < num_items) {
-        int64:rand_key = raw hash_int64(i);
+    till (num_items, 1i64) {
+        int64:rand_key = raw hash_int64($);
         if (rand_key < 0i64) { rand_key = rand_key * -1i64; }
         rand_key = rand_key % (num_items * 10i64);
-        drop raw SkipList.contains(skip, rand_key);
-        i = i + 1i64;
+        drop SkipList_contains::<int64>(skip, rand_key);
     }
     
-    drop raw SkipList.destroy(skip);
+    drop SkipList_destroy::<int64>(skip);
     
     // We intentionally omit SortedList for 100,000 items as its O(N) insertion
     // would take exceptionally long and muddy the execution results of the 

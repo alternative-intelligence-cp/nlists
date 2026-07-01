@@ -1,2 +1,2 @@
 use "../src/allocator.npk".*;
-pub func:main = int32() { exit 0i32; };
+pub func:main = int32(int32:argc, int8[]->:argv) { exit 0i32; };

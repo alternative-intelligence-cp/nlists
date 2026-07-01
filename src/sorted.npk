@@ -1,73 +1,58 @@
-// src/sorted.npk
-use "allocator.npk".*;
-use "doubly.npk".*;
+use "skiplist.npk".*;
 use "types.npk".*;
-use "mem.npk".*;
 
-// SortedList is just a wrapper around DList that maintains order
-// It uses DList's allocation and data structure (DListHeader) underneath.
-pub Type:SortedList = {
-    func:create = int64() {
-        pass raw DList.create();
-    };
+extern "nitpick_libc_mem" {
+    func:nitpick_libc_mem_calloc = int64(int64:count, int64:size);
+    func:nitpick_libc_mem_free = void(int64:ptr);
+}
 
-    func:destroy = int8(int64:header) {
-        pass raw DList.destroy(header);
-    };
+// In Nitpick, we can just typedef or wrap SkipList
 
-    // Inserts a value in ascending sorted order
-    func:insert = int8(int64:header, int64:val) {
-        if (header == 0i64) { pass 1i8; }
-        
-        int64:head = raw load64(header + 0i64);
-        if (head == 0i64) {
-            pass raw DList.push_front(header, val);
-        }
 
-        // Iterate to find the correct spot (first element >= val)
-        int64:curr = head;
-        while (curr != 0i64) {
-            int64:curr_val = raw load64(curr + 0i64);
-            if (val <= curr_val) {
-                // Insert before curr
-                int64:allocator = raw load64(header + 24i64);
-                int64:node = raw NodeAllocator.alloc(allocator);
-                if (node == 0i64) { pass 1i8; }
-                
-                int64:prev = raw load64(curr + 16i64);
-                
-                drop raw store64(node + 0i64, val);
-                drop raw store64(node + 8i64, curr);
-                drop raw store64(node + 16i64, prev);
-                
-                drop raw store64(curr + 16i64, node);
-                
-                if (prev == 0i64) {
-                    drop raw store64(header + 0i64, node);
-                } else {
-                    drop raw store64(prev + 8i64, node);
-                }
-                
-                int64:count = raw load64(header + 16i64);
-                drop raw store64(header + 16i64, count + 1i64);
-                pass 0i8;
-            }
-            curr = raw load64(curr + 8i64);
-        }
-
-        // If we reach here, it's larger than all elements -> push_back
-        pass raw DList.push_back(header, val);
-    };
-
-    func:pop_front = int64(int64:header) {
-        pass raw DList.pop_front(header);
-    };
-
-    func:pop_back = int64(int64:header) {
-        pass raw DList.pop_back(header);
-    };
+pub func:SortedList_create<T> = Result<int64>() {
+    int64:header_raw = nitpick_libc_mem_calloc(1i64, 8i64);
+    if (header_raw == 0i64) { fail ERR_OOM; }
     
-    func:count = int64(int64:header) {
-        pass raw DList.count(header);
-    };
+    SortedListHeader<T>->:h_ptr = cast_unchecked<SortedListHeader<T>-> >(header_raw);
+    
+    Result<int64>:sl_res = SkipList_create::<T>();
+    // if (is_err(sl_res)) {
+    //     nitpick_libc_mem_free(header_raw);
+    //     fail ERR_OOM; // Or forward the err
+    // }
+    
+    h_ptr->skip_list_header = 0i64;
+    pass cast_unchecked<any>(header_raw);
+};
+
+pub func:SortedList_destroy<T> = Result<NIL>(int64:header) {
+    if (header == 0i64) { pass cast_unchecked<any>(NIL); }
+    SortedListHeader<T>->:h_ptr = cast_unchecked<SortedListHeader<T>-> >(header);
+    drop SkipList_destroy::<T>(h_ptr->skip_list_header);
+    nitpick_libc_mem_free(header);
+    pass cast_unchecked<any>(NIL);
+};
+
+pub func:SortedList_insert<T> = Result<NIL>(int64:header, *T:val) {
+    if (header == 0i64) { fail ERR_EMPTY; }
+    SortedListHeader<T>->:h_ptr = cast_unchecked<SortedListHeader<T>-> >(header);
+    pass cast_unchecked<any>(SkipList_insert::<T>(h_ptr->skip_list_header, val));
+};
+
+pub func:SortedList_remove<T> = Result<NIL>(int64:header, *T:val) {
+    if (header == 0i64) { fail ERR_EMPTY; }
+    SortedListHeader<T>->:h_ptr = cast_unchecked<SortedListHeader<T>-> >(header);
+    pass cast_unchecked<any>(SkipList_remove::<T>(h_ptr->skip_list_header, val));
+};
+
+pub func:SortedList_contains<T> = Result<int64>(int64:header, *T:val) {
+    if (header == 0i64) { pass cast_unchecked<any>(0i64); }
+    SortedListHeader<T>->:h_ptr = cast_unchecked<SortedListHeader<T>-> >(header);
+    pass cast_unchecked<any>(SkipList_contains::<T>(h_ptr->skip_list_header, val));
+};
+
+pub func:SortedList_count<T> = Result<int64>(int64:header) {
+    if (header == 0i64) { pass cast_unchecked<any>(0i64); }
+    SortedListHeader<T>->:h_ptr = cast_unchecked<SortedListHeader<T>-> >(header);
+    pass cast_unchecked<any>(SkipList_count::<T>(h_ptr->skip_list_header));
 };

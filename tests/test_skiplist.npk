@@ -1,30 +1,28 @@
 use "../src/skiplist.npk".*;
 
-pub func:failsafe = int32(tbb32:err) {
-    exit 1i32;
-};
 
-pub func:main = int32(int32:argc, wild int8->:argv) {
-    int64:list = raw SkipList.create();
-    if (list == 0i64) { return 1i32; }
 
-    drop raw SkipList.insert(list, 50i64);
-    drop raw SkipList.insert(list, 10i64);
-    drop raw SkipList.insert(list, 30i64);
-    drop raw SkipList.insert(list, 20i64);
-    drop raw SkipList.insert(list, 40i64);
+func:main = int32() {
+    int64:list = raw SkipList_create();
+    if (list == 0i64) { exit 1i32; }
 
-    if (raw SkipList.count(list) != 5i64) { return 2i32; }
+    drop SkipList_insert(list, 50i64);
+    drop SkipList_insert(list, 10i64);
+    drop SkipList_insert(list, 30i64);
+    drop SkipList_insert(list, 20i64);
+    drop SkipList_insert(list, 40i64);
 
-    if (raw SkipList.contains(list, 30i64) != 1i8) { return 3i32; }
-    if (raw SkipList.contains(list, 100i64) != 0i8) { return 4i32; }
+    if (raw SkipList_count(list) != 5i64) { exit 2i32; }
 
-    drop raw SkipList.remove(list, 30i64);
+    if (raw SkipList_contains(list, 30i64) != 1i8) { exit 3i32; }
+    if (raw SkipList_contains(list, 100i64) != 0i8) { exit 4i32; }
+
+    drop SkipList_remove(list, 30i64);
     
-    if (raw SkipList.contains(list, 30i64) != 0i8) { return 5i32; }
-    if (raw SkipList.count(list) != 4i64) { return 6i32; }
+    if (raw SkipList_contains(list, 30i64) != 0i8) { exit 5i32; }
+    if (raw SkipList_count(list) != 4i64) { exit 6i32; }
 
-    drop raw SkipList.destroy(list);
+    drop SkipList_destroy(list);
     
     exit 0i32;
 };
