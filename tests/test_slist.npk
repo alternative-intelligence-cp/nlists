@@ -1,41 +1,44 @@
 use "../src/singly.npk".*;
 
+func:failsafe = int32(tbb32:err) { exit 99i32; };
 
 
 func:main = int32() {
-    int64:list = raw SList_create();
+    int64:list = raw SList_create<int64>();
     if (list == 0i64) { exit 1i32; }
 
     // Test push_front
-    drop SList_push_front(list, 10i64);
-    drop SList_push_front(list, 20i64);
-    if (raw SList_count(list) != 2i64) { exit 2i32; }
+    drop SList_push_front<int64>(list, 10i64);
+    drop SList_push_front<int64>(list, 20i64);
+    if (raw SList_count<int64>(list) != 2i64) { exit 2i32; }
 
     // Test pop_front
-    if (raw SList_pop_front(list) != 20i64) { exit 3i32; }
-    if (raw SList_pop_front(list) != 10i64) { exit 4i32; }
-    if (raw SList_count(list) != 0i64) { exit 5i32; }
+    if (raw SList_pop_front<int64>(list) != 20i64) { exit 3i32; }
+    if (raw SList_pop_front<int64>(list) != 10i64) { exit 4i32; }
+    if (raw SList_count<int64>(list) != 0i64) { exit 5i32; }
 
     // Test push_back
-    drop SList_push_back(list, 100i64);
-    drop SList_push_back(list, 200i64);
-    drop SList_push_back(list, 300i64);
-    if (raw SList_count(list) != 3i64) { exit 6i32; }
+    drop SList_push_back<int64>(list, 100i64);
+    drop SList_push_back<int64>(list, 200i64);
+    drop SList_push_back<int64>(list, 300i64);
+    if (raw SList_count<int64>(list) != 3i64) { exit 6i32; }
 
     // Test contains
-    if (raw SList_contains(list, 200i64) != 1i8) { exit 7i32; }
-    if (raw SList_contains(list, 999i64) != 0i8) { exit 8i32; }
+    if (raw SList_contains<int64>(list, 200i64) != 1i8) { exit 7i32; }
+    if (raw SList_contains<int64>(list, 999i64) != 0i8) { exit 8i32; }
 
     // Test remove_first
-    if (raw SList_remove_first(list, 200i64) != 1i8) { exit 9i32; }
-    if (raw SList_count(list) != 2i64) { exit 10i32; }
+    if (raw SList_remove_first<int64>(list, 200i64) != 1i8) { exit 9i32; }
+    if (raw SList_count<int64>(list) != 2i64) { exit 10i32; }
 
-    // Test reverse
-    drop SList_reverse(list);
-    if (raw SList_pop_front(list) != 300i64) { exit 11i32; }
+    // Test reverse (list now has [100, 300])
+    drop SList_reverse<int64>(list);
+    // After reverse: [300, 100]
+    if (raw SList_pop_front<int64>(list) != 300i64) { exit 11i32; }
 
     // Cleanup
-    drop SList_destroy(list);
+    drop SList_destroy<int64>(list);
     
     exit 0i32;
 };
+

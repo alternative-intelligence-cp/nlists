@@ -1,78 +1,188 @@
-use "types.npk".*;
+// src/singly.npk
+// Singly-linked list: pure raw-memory implementation (int64-keyed values)
+// Uses NitpickAlloc via libc shim for node allocation.
+// Values are stored as int64 (callers cast to/from their own types).
 
 extern "nitpick_libc_mem" {
     func:nitpick_libc_mem_calloc = int64(int64:count, int64:size);
     func:nitpick_libc_mem_free = void(int64:ptr);
 }
 
+// Header layout (48 bytes):
+//   [0..7]   head  (int64, node pointer or 0)
+//   [8..15]  tail  (int64, node pointer or 0)
+//   [16..23] count (int64)
+// Node layout (16 bytes):
+//   [0..7]   val  (int64)
+//   [8..15]  next (int64, node pointer or 0)
 
-
-pub func:SList_create<T> = Result<int64>() {
-    int64:header_raw = nitpick_libc_mem_calloc(1i64, 64i64);
-    if (header_raw == 0i64) { fail ERR_OOM; }
-    
-    // Initialize the arena by assigning an empty one, or wait, it might be 0 initialized.
-    // Nitpick might not have a way to manually initialize an arena struct easily on heap.
-    // Actually, zero init is perfectly fine for arena.
-    pass cast_unchecked<any>(header_raw);
+pub func:SList_create<T> = int64() {
+    int64:header = nitpick_libc_mem_calloc(1i64, 24i64);
+    pass header;
 };
 
-pub func:SList_destroy<T> = Result<NIL>(int64:header) {
-    if (header == 0i64) { pass cast_unchecked<any>(NIL); }
-    nitpick_libc_mem_free(header);
-    pass cast_unchecked<any>(NIL);
-};
-
-pub func:SList_push_front<T> = Result<NIL>(int64:header, *T:val) {
-    if (header == 0i64) { fail ERR_EMPTY; }
-    SListHeader<T>->:list = cast_unchecked<SListHeader<T>-> >(header);
-    
-    SNode<T>:new_node;
-    new_node.val = val;
-    new_node.next = list->head;
-    // Handle<SNode<T> >:h_new = list->node_arena.alloc(new_node); // npkc bug
-    Handle<SNode<T> >:h_new = cast_unchecked<Handle<SNode<T> > >(0i64);
-    
-    list->head = h_new;
-    if (list->count == 0i64) {
-        list->tail = h_new;
+pub func:SList_destroy<T> = int8(int64:header) {
+    if (header == 0i64) { pass 0i8; }
+    // Walk list and free every node
+    int64:curr = _sl_load64(header);       // head
+    while (curr != 0i64) {
+        int64:nxt = _sl_load64(curr + 8i64);
+        nitpick_libc_mem_free(curr);
+        curr = nxt;
     }
-    list->count = list->count + 1i64;
-    pass cast_unchecked<any>(NIL);
+    nitpick_libc_mem_free(header);
+    pass 1i8;
 };
 
-pub func:SList_pop_front<T> = Result<*T>(int64:header) {
-    if (header == 0i64) { fail ERR_EMPTY; }
-    SListHeader<T>->:list = cast_unchecked<SListHeader<T>-> >(header);
-    if (list->count == 0i64) { fail ERR_EMPTY; }
-    
-    Handle<SNode<T> >:h_head = list->head;
-    // Result<SNode<T> >:head_node_res = list->node_arena.get(h_head); // npkc bug
-    SNode<T>:head_node;
-    head_node.val = cast_unchecked<*T>(0i64);
-    // if (is_err(head_node_res)) { fail ERR_EMPTY; }
-    // SNode<T>:head_node = unwrap(head_node_res);
-    *T:val = head_node.val;
-    
-    list->head = head_node.next;
-    list->count = list->count - 1i64;
-    
-    // drop list->node_arena.free(h_head); // npkc bug
-    pass cast_unchecked<any>(val);
+pub func:SList_push_front<T> = int8(int64:header, int64:val) {
+    if (header == 0i64) { pass 0i8; }
+    int64:node = nitpick_libc_mem_calloc(1i64, 16i64);
+    if (node == 0i64) { pass 0i8; }
+    // node.val = val
+    _sl_store64(node, val);
+    // node.next = old head
+    int64:old_head = _sl_load64(header);
+    _sl_store64(node + 8i64, old_head);
+    // header.head = node
+    _sl_store64(header, node);
+    // if list was empty, tail = node too
+    int64:cnt = _sl_load64(header + 16i64);
+    if (cnt == 0i64) {
+        _sl_store64(header + 8i64, node);
+    }
+    _sl_store64(header + 16i64, cnt + 1i64);
+    pass 1i8;
 };
 
-pub func:SList_clear<T> = Result<NIL>(int64:header) {
-    if (header == 0i64) { pass cast_unchecked<any>(NIL); }
-    SListHeader<T>->:list = cast_unchecked<SListHeader<T>-> >(header);
-    // Actually, arena<T> doesn't have a clear() method documented.
-    // But we can just zero out the header count and head/tail.
-    // Memory leak? arena is freed when SList_destroy is called.
-    list->count = 0i64;
-    pass cast_unchecked<any>(NIL);
+pub func:SList_push_back<T> = int8(int64:header, int64:val) {
+    if (header == 0i64) { pass 0i8; }
+    int64:node = nitpick_libc_mem_calloc(1i64, 16i64);
+    if (node == 0i64) { pass 0i8; }
+    _sl_store64(node, val);
+    _sl_store64(node + 8i64, 0i64); // next = NULL
+    int64:cnt = _sl_load64(header + 16i64);
+    if (cnt == 0i64) {
+        // Empty list: head = tail = node
+        _sl_store64(header, node);
+        _sl_store64(header + 8i64, node);
+    } else {
+        // Link old tail's next to new node, update tail
+        int64:old_tail = _sl_load64(header + 8i64);
+        _sl_store64(old_tail + 8i64, node);
+        _sl_store64(header + 8i64, node);
+    }
+    _sl_store64(header + 16i64, cnt + 1i64);
+    pass 1i8;
 };
 
-pub func:SList_count<T> = Result<int64>(int64:header) {
-    if (header == 0i64) { pass cast_unchecked<any>(0i64); }
-    SListHeader<T>->:list = cast_unchecked<SListHeader<T>-> >(header);
-    pass cast_unchecked<any>(list->count);
+pub func:SList_pop_front<T> = int64(int64:header) {
+    if (header == 0i64) { pass 0i64; }
+    int64:cnt = _sl_load64(header + 16i64);
+    if (cnt == 0i64) { pass 0i64; }
+    int64:head = _sl_load64(header);
+    int64:val = _sl_load64(head);
+    int64:nxt = _sl_load64(head + 8i64);
+    nitpick_libc_mem_free(head);
+    _sl_store64(header, nxt);
+    _sl_store64(header + 16i64, cnt - 1i64);
+    if (cnt - 1i64 == 0i64) {
+        _sl_store64(header + 8i64, 0i64); // tail = NULL
+    }
+    pass val;
+};
+
+pub func:SList_peek_front<T> = int64(int64:header) {
+    if (header == 0i64) { pass 0i64; }
+    int64:head = _sl_load64(header);
+    if (head == 0i64) { pass 0i64; }
+    pass _sl_load64(head);
+};
+
+pub func:SList_contains<T> = int8(int64:header, int64:val) {
+    if (header == 0i64) { pass 0i8; }
+    int64:curr = _sl_load64(header);
+    while (curr != 0i64) {
+        if (_sl_load64(curr) == val) { pass 1i8; }
+        curr = _sl_load64(curr + 8i64);
+    }
+    pass 0i8;
+};
+
+pub func:SList_remove_first<T> = int8(int64:header, int64:val) {
+    if (header == 0i64) { pass 0i8; }
+    int64:cnt = _sl_load64(header + 16i64);
+    if (cnt == 0i64) { pass 0i8; }
+    int64:curr = _sl_load64(header);
+    int64:prev = 0i64;
+    while (curr != 0i64) {
+        if (_sl_load64(curr) == val) {
+            int64:nxt = _sl_load64(curr + 8i64);
+            if (prev == 0i64) {
+                _sl_store64(header, nxt);
+            } else {
+                _sl_store64(prev + 8i64, nxt);
+            }
+            if (nxt == 0i64) {
+                // removed tail
+                _sl_store64(header + 8i64, prev);
+            }
+            nitpick_libc_mem_free(curr);
+            _sl_store64(header + 16i64, cnt - 1i64);
+            pass 1i8;
+        }
+        prev = curr;
+        curr = _sl_load64(curr + 8i64);
+    }
+    pass 0i8;
+};
+
+pub func:SList_reverse<T> = int8(int64:header) {
+    if (header == 0i64) { pass 0i8; }
+    int64:cnt = _sl_load64(header + 16i64);
+    if (cnt <= 1i64) { pass 1i8; }
+    // Save old head as new tail
+    int64:old_head = _sl_load64(header);
+    int64:prev = 0i64;
+    int64:curr = old_head;
+    while (curr != 0i64) {
+        int64:nxt = _sl_load64(curr + 8i64);
+        _sl_store64(curr + 8i64, prev);
+        prev = curr;
+        curr = nxt;
+    }
+    // prev is now the new head
+    _sl_store64(header, prev);
+    _sl_store64(header + 8i64, old_head); // old head is new tail
+    pass 1i8;
+};
+
+pub func:SList_clear<T> = int8(int64:header) {
+    if (header == 0i64) { pass 0i8; }
+    int64:curr = _sl_load64(header);
+    while (curr != 0i64) {
+        int64:nxt = _sl_load64(curr + 8i64);
+        nitpick_libc_mem_free(curr);
+        curr = nxt;
+    }
+    _sl_store64(header, 0i64);
+    _sl_store64(header + 8i64, 0i64);
+    _sl_store64(header + 16i64, 0i64);
+    pass 1i8;
+};
+
+pub func:SList_count<T> = int64(int64:header) {
+    if (header == 0i64) { pass 0i64; }
+    pass _sl_load64(header + 16i64);
+};
+
+// Private helpers for memory access
+func:_sl_load64 = int64(int64:addr) {
+    int64->:ptr = cast_unchecked<int64->>(addr);
+    pass ptr[0i64];
+};
+
+func:_sl_store64 = int8(int64:addr, int64:val) {
+    int64->:ptr = cast_unchecked<int64->>(addr);
+    ptr[0i64] = val;
+    pass 0i8;
 };

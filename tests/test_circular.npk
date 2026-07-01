@@ -1,25 +1,25 @@
 use "../src/circular.npk".*;
 
-
+func:failsafe = int32(tbb32:err) { exit 99i32; };
 
 func:main = int32() {
-    int64:list = raw CList_create();
+    int64:list = raw CList_create<int64>();
     if (list == 0i64) { exit 1i32; }
 
-    drop CList_push_front(list, 10i64);
-    drop CList_push_front(list, 20i64);
-    drop CList_push_back(list, 5i64);
+    drop CList_push_front<int64>(list, 10i64);
+    drop CList_push_front<int64>(list, 20i64);
+    drop CList_push_back<int64>(list, 5i64);
     // State should be: 20 -> 10 -> 5 -> (loops to 20)
     
-    if (raw CList_count(list) != 3i64) { exit 2i32; }
+    if (raw CList_count<int64>(list) != 3i64) { exit 2i32; }
 
-    if (raw CList_pop_front(list) != 20i64) { exit 3i32; }
-    if (raw CList_pop_front(list) != 10i64) { exit 4i32; }
-    if (raw CList_pop_front(list) != 5i64) { exit 5i32; }
+    if (raw CList_pop_front<int64>(list) != 20i64) { exit 3i32; }
+    if (raw CList_pop_front<int64>(list) != 10i64) { exit 4i32; }
+    if (raw CList_pop_front<int64>(list) != 5i64) { exit 5i32; }
     
-    if (raw CList_count(list) != 0i64) { exit 6i32; }
+    if (raw CList_count<int64>(list) != 0i64) { exit 6i32; }
 
-    drop CList_destroy(list);
+    drop CList_destroy<int64>(list);
     
     exit 0i32;
 };

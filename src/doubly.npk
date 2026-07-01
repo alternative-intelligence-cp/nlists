@@ -1,77 +1,242 @@
-use "types.npk".*;
+// src/doubly.npk
+// Doubly-linked list: pure raw-memory implementation (int64-valued nodes)
+// Node layout (24 bytes):
+//   [0..7]   val  (int64)
+//   [8..15]  prev (int64 node pointer or 0)
+//   [16..23] next (int64 node pointer or 0)
+// Header layout (32 bytes):
+//   [0..7]   head  (int64 node pointer or 0)
+//   [8..15]  tail  (int64 node pointer or 0)
+//   [16..23] count (int64)
 
 extern "nitpick_libc_mem" {
     func:nitpick_libc_mem_calloc = int64(int64:count, int64:size);
     func:nitpick_libc_mem_free = void(int64:ptr);
 }
 
-
-
-pub func:DList_create<T> = Result<int64>() {
-    int64:header_raw = nitpick_libc_mem_calloc(1i64, 64i64);
-    if (header_raw == 0i64) { fail ERR_OOM; }
-    pass cast_unchecked<any>(header_raw);
+pub func:DList_create<T> = int64() {
+    int64:header = nitpick_libc_mem_calloc(1i64, 24i64);
+    pass header;
 };
 
-pub func:DList_destroy<T> = Result<NIL>(int64:header) {
-    if (header == 0i64) { pass cast_unchecked<any>(NIL); }
-    nitpick_libc_mem_free(header);
-    pass cast_unchecked<any>(NIL);
-};
-
-pub func:DList_push_back<T> = Result<NIL>(int64:header, *T:val) {
-    if (header == 0i64) { fail ERR_EMPTY; }
-    DListHeader<T>->:list = cast_unchecked<DListHeader<T>-> >(header);
-    
-    Handle<DNode<T> >:null_h; // we can't initialize it easily, so just use empty handles where needed
-    // wait, I can just leave prev empty for now.
-    
-    DNode<T>:new_node = DNode<T>{val: val, prev: list->tail}; // next will be default zeroed if omitted? No, we must provide it.
-    // wait, we can just do:
-    // DNode<T>:new_node; new_node.val = val; new_node.prev = list->tail;
-    // Let's do that!
-    DNode<T>:new_node;
-    new_node.val = val;
-    Handle<DNode<T> >:t = list->tail;
-    new_node.prev = t;
-    
-    // Handle<DNode<T> >:h_new = list->node_arena.alloc(new_node); // npkc bug
-    Handle<DNode<T> >:h_new = cast_unchecked<Handle<DNode<T> > >(0i64);
-    
-    if (list->count == 0i64) {
-        list->head = h_new;
-    } else {
-        // update old tail's next
+pub func:DList_destroy<T> = int8(int64:header) {
+    if (header == 0i64) { pass 0i8; }
+    int64:curr = _dl_load64(header);      // head
+    while (curr != 0i64) {
+        int64:nxt = _dl_load64(curr + 16i64);
+        nitpick_libc_mem_free(curr);
+        curr = nxt;
     }
-    
-    list->tail = h_new;
-    list->count = list->count + 1i64;
-    pass cast_unchecked<any>(NIL);
+    nitpick_libc_mem_free(header);
+    pass 1i8;
 };
 
-pub func:DList_pop_front<T> = Result<*T>(int64:header) {
-    if (header == 0i64) { fail ERR_EMPTY; }
-    DListHeader<T>->:list = cast_unchecked<DListHeader<T>-> >(header);
-    if (list->count == 0i64) { fail ERR_EMPTY; }
-    
-    Handle<DNode<T> >:h_head = list->head;
-    // Result<DNode<T> >:head_node_res = list->node_arena.get(h_head); // npkc bug
-    DNode<T>:dummy_node;
-    dummy_node.val = cast_unchecked<*T>(0i64);
-    // if (is_err(head_node_res)) { fail ERR_EMPTY; }
-    
-    DNode<T>:head_node = dummy_node;
-    *T:val = head_node.val;
-    
-    list->head = head_node.next;
-    list->count = list->count - 1i64;
-    
-    // drop list->node_arena.free(h_head);
-    pass cast_unchecked<any>(val);
+pub func:DList_push_front<T> = int8(int64:header, int64:val) {
+    if (header == 0i64) { pass 0i8; }
+    int64:node = nitpick_libc_mem_calloc(1i64, 24i64);
+    if (node == 0i64) { pass 0i8; }
+    _dl_store64(node, val);
+    _dl_store64(node + 8i64, 0i64);      // prev = NULL
+    int64:old_head = _dl_load64(header);
+    _dl_store64(node + 16i64, old_head); // next = old_head
+    if (old_head != 0i64) {
+        _dl_store64(old_head + 8i64, node); // old_head.prev = node
+    } else {
+        _dl_store64(header + 8i64, node);   // tail = node (was empty)
+    }
+    _dl_store64(header, node);
+    int64:cnt = _dl_load64(header + 16i64);
+    _dl_store64(header + 16i64, cnt + 1i64);
+    pass 1i8;
 };
 
-pub func:DList_count<T> = Result<int64>(int64:header) {
-    if (header == 0i64) { pass cast_unchecked<any>(0i64); }
-    DListHeader<T>->:list = cast_unchecked<DListHeader<T>-> >(header);
-    pass cast_unchecked<any>(list->count);
+pub func:DList_push_back<T> = int8(int64:header, int64:val) {
+    if (header == 0i64) { pass 0i8; }
+    int64:node = nitpick_libc_mem_calloc(1i64, 24i64);
+    if (node == 0i64) { pass 0i8; }
+    _dl_store64(node, val);
+    _dl_store64(node + 16i64, 0i64);     // next = NULL
+    int64:old_tail = _dl_load64(header + 8i64);
+    _dl_store64(node + 8i64, old_tail);  // prev = old_tail
+    if (old_tail != 0i64) {
+        _dl_store64(old_tail + 16i64, node); // old_tail.next = node
+    } else {
+        _dl_store64(header, node);           // head = node (was empty)
+    }
+    _dl_store64(header + 8i64, node);
+    int64:cnt = _dl_load64(header + 16i64);
+    _dl_store64(header + 16i64, cnt + 1i64);
+    pass 1i8;
+};
+
+pub func:DList_pop_front<T> = int64(int64:header) {
+    if (header == 0i64) { pass 0i64; }
+    int64:head = _dl_load64(header);
+    if (head == 0i64) { pass 0i64; }
+    int64:val = _dl_load64(head);
+    int64:nxt = _dl_load64(head + 16i64);
+    nitpick_libc_mem_free(head);
+    _dl_store64(header, nxt);
+    if (nxt != 0i64) {
+        _dl_store64(nxt + 8i64, 0i64); // new head's prev = NULL
+    } else {
+        _dl_store64(header + 8i64, 0i64); // list now empty, tail = NULL
+    }
+    int64:cnt = _dl_load64(header + 16i64);
+    _dl_store64(header + 16i64, cnt - 1i64);
+    pass val;
+};
+
+pub func:DList_pop_back<T> = int64(int64:header) {
+    if (header == 0i64) { pass 0i64; }
+    int64:tail = _dl_load64(header + 8i64);
+    if (tail == 0i64) { pass 0i64; }
+    int64:val = _dl_load64(tail);
+    int64:prv = _dl_load64(tail + 8i64);
+    nitpick_libc_mem_free(tail);
+    _dl_store64(header + 8i64, prv);
+    if (prv != 0i64) {
+        _dl_store64(prv + 16i64, 0i64); // new tail's next = NULL
+    } else {
+        _dl_store64(header, 0i64); // list now empty, head = NULL
+    }
+    int64:cnt = _dl_load64(header + 16i64);
+    _dl_store64(header + 16i64, cnt - 1i64);
+    pass val;
+};
+
+pub func:DList_peek_front<T> = int64(int64:header) {
+    if (header == 0i64) { pass 0i64; }
+    int64:head = _dl_load64(header);
+    if (head == 0i64) { pass 0i64; }
+    pass _dl_load64(head);
+};
+
+pub func:DList_peek_back<T> = int64(int64:header) {
+    if (header == 0i64) { pass 0i64; }
+    int64:tail = _dl_load64(header + 8i64);
+    if (tail == 0i64) { pass 0i64; }
+    pass _dl_load64(tail);
+};
+
+pub func:DList_count<T> = int64(int64:header) {
+    if (header == 0i64) { pass 0i64; }
+    pass _dl_load64(header + 16i64);
+};
+
+pub func:DList_contains<T> = int8(int64:header, int64:val) {
+    if (header == 0i64) { pass 0i8; }
+    int64:curr = _dl_load64(header);
+    while (curr != 0i64) {
+        if (_dl_load64(curr) == val) { pass 1i8; }
+        curr = _dl_load64(curr + 16i64);
+    }
+    pass 0i8;
+};
+
+pub func:DList_remove<T> = int8(int64:header, int64:val) {
+    if (header == 0i64) { pass 0i8; }
+    int64:curr = _dl_load64(header);
+    while (curr != 0i64) {
+        if (_dl_load64(curr) == val) {
+            int64:prv = _dl_load64(curr + 8i64);
+            int64:nxt = _dl_load64(curr + 16i64);
+            if (prv != 0i64) {
+                _dl_store64(prv + 16i64, nxt);
+            } else {
+                _dl_store64(header, nxt); // curr was head
+            }
+            if (nxt != 0i64) {
+                _dl_store64(nxt + 8i64, prv);
+            } else {
+                _dl_store64(header + 8i64, prv); // curr was tail
+            }
+            nitpick_libc_mem_free(curr);
+            int64:cnt = _dl_load64(header + 16i64);
+            _dl_store64(header + 16i64, cnt - 1i64);
+            pass 1i8;
+        }
+        curr = _dl_load64(curr + 16i64);
+    }
+    pass 0i8;
+};
+
+// Insert a new node with new_val immediately BEFORE the node containing target_val
+pub func:DList_insert_before<T> = int8(int64:header, int64:target_val, int64:new_val) {
+    if (header == 0i64) { pass 0i8; }
+    int64:curr = _dl_load64(header);
+    while (curr != 0i64) {
+        if (_dl_load64(curr) == target_val) {
+            int64:prv = _dl_load64(curr + 8i64);
+            int64:node = nitpick_libc_mem_calloc(1i64, 24i64);
+            if (node == 0i64) { pass 0i8; }
+            _dl_store64(node, new_val);
+            _dl_store64(node + 8i64, prv);
+            _dl_store64(node + 16i64, curr);
+            if (prv != 0i64) {
+                _dl_store64(prv + 16i64, node);
+            } else {
+                _dl_store64(header, node); // new head
+            }
+            _dl_store64(curr + 8i64, node);
+            int64:cnt = _dl_load64(header + 16i64);
+            _dl_store64(header + 16i64, cnt + 1i64);
+            pass 1i8;
+        }
+        curr = _dl_load64(curr + 16i64);
+    }
+    pass 0i8;
+};
+
+// Insert a new node with new_val immediately AFTER the node containing target_val
+pub func:DList_insert_after<T> = int8(int64:header, int64:target_val, int64:new_val) {
+    if (header == 0i64) { pass 0i8; }
+    int64:curr = _dl_load64(header);
+    while (curr != 0i64) {
+        if (_dl_load64(curr) == target_val) {
+            int64:nxt = _dl_load64(curr + 16i64);
+            int64:node = nitpick_libc_mem_calloc(1i64, 24i64);
+            if (node == 0i64) { pass 0i8; }
+            _dl_store64(node, new_val);
+            _dl_store64(node + 8i64, curr);
+            _dl_store64(node + 16i64, nxt);
+            if (nxt != 0i64) {
+                _dl_store64(nxt + 8i64, node);
+            } else {
+                _dl_store64(header + 8i64, node); // new tail
+            }
+            _dl_store64(curr + 16i64, node);
+            int64:cnt = _dl_load64(header + 16i64);
+            _dl_store64(header + 16i64, cnt + 1i64);
+            pass 1i8;
+        }
+        curr = _dl_load64(curr + 16i64);
+    }
+    pass 0i8;
+};
+
+pub func:DList_clear<T> = int8(int64:header) {
+    if (header == 0i64) { pass 0i8; }
+    int64:curr = _dl_load64(header);
+    while (curr != 0i64) {
+        int64:nxt = _dl_load64(curr + 16i64);
+        nitpick_libc_mem_free(curr);
+        curr = nxt;
+    }
+    _dl_store64(header, 0i64);
+    _dl_store64(header + 8i64, 0i64);
+    _dl_store64(header + 16i64, 0i64);
+    pass 1i8;
+};
+
+// Private helpers
+func:_dl_load64 = int64(int64:addr) {
+    int64->:ptr = cast_unchecked<int64->>(addr);
+    pass ptr[0i64];
+};
+
+func:_dl_store64 = int8(int64:addr, int64:val) {
+    int64->:ptr = cast_unchecked<int64->>(addr);
+    ptr[0i64] = val;
+    pass 0i8;
 };
